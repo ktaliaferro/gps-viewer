@@ -1,7 +1,7 @@
--- TNS|Log Viewer|TNE
+-- TNS|GPS Viewer|TNE
 
 local function run()
-    return "/SCRIPTS/TOOLS/LogViewer/main.lua"
+    return "/SCRIPTS/TOOLS/gpsViewer/main.lua"
 end
 
 return { run = run }

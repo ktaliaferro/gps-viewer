@@ -7,7 +7,7 @@ M.m_tables = m_tables
 M.m_utils = m_utils
 M.m_lib_file_parser = m_lib_file_parser
 
-M.idx_file_name = "/LOGS/log-viewer.csv"
+M.idx_file_name = "/LOGS/gps-viewer.csv"
 
 M.log_files_index_info = {}
 

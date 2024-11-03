@@ -13,11 +13,10 @@
 ---- #                                                                       #
 ---- #########################################################################
 
--- This script display a log file as a graph
--- Original Author: Herman Kruisman (RealTadango) (original version: https://raw.githubusercontent.com/RealTadango/FrSky/master/OpenTX/LView/LView.lua)
--- Current Author: Offer Shmuely
--- Date: 2023
-local app_ver = "1.14"
+-- Original Authors: Herman Kruisman and Offer Shmuely (https://github.com/offer-shmuely/edgetx-x10-scripts/tree/main/SCRIPTS/TOOLS)
+-- Current Author: Kenny Taliaferro
+
+local app_ver = "1.0"
 
 -- to get help:
 -- change in lib_log.lua to "ENABLE_LOG_FILE=true"
@@ -25,7 +24,7 @@ local app_ver = "1.14"
 -- run the script ...
 -- send me the log file that will be created on: /SCRIPTS/TOOLS/LogViewer/app.log
 
-local app_name = "LogViewer"
+local app_name = "gpsViewer"
 
 local m_log = nil
 local m_utils = nil
@@ -37,7 +36,7 @@ local m_main_app = nil
 
 
 local error_desc = nil
-local script_folder = "/SCRIPTS/TOOLS/LogViewer/"
+local script_folder = "/SCRIPTS/TOOLS/gpsViewer/"
 
 local function validate_image(file_name)
     local img1 = Bitmap.open(script_folder .. file_name)
@@ -97,15 +96,9 @@ local function validate_files()
     m_libgui = validate_script("libgui", "1.0.3")
     if error_desc ~= nil then return end
 
-    m_main_app = validate_script("LogViewer3", app_ver, m_log, m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui)
+    m_main_app = validate_script("gpsViewer3", app_ver, m_log, m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui)
     if error_desc ~= nil then return end
 
-
-    validate_image("bg1.png")
-    if error_desc ~= nil then return end
-
-    validate_image("bg2.png")
-    if error_desc ~= nil then return end
 end
 
 local function init()

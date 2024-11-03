@@ -25,6 +25,15 @@ function M.getTotalSeconds(time)
     return total
 end
 
+function contains(table, element)
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
+end
+
 function M.getFileDataInfo(fileName)
     M.m_log.info("getFileDataInfo(%s)", fileName)
 
@@ -61,13 +70,20 @@ function M.getFileDataInfo(fileName)
 
     -- get columns
     columns_by_header = M.m_utils.split(headerLine)
+    
+    if contains(columns_by_header,"GPS") then
+      i = #columns_by_header
+      columns_by_header[i+1]="longitude"
+      columns_by_header[i+2]="latitude"
+
+    end
 
     start_index = index
     io.seek(hFile, index)
 
     -- stop after 2M (1000x2028)
     local sample_col_data = nil
-    for i = 1, 50000 do
+    for i = 1, 1000 do
         --M.m_log.info("profiler: start")
         --local t1 =getTime()
         local data2 = io.read(hFile, 2048)
@@ -155,15 +171,17 @@ function M.getFileDataInfo(fileName)
                 local have_data = vals[idxCol] ~= sample_col_data[idxCol]
                 if have_data == true then
                     -- always ignore
-                    if curr_col == "GPS"     then have_data = false end
-                    if curr_col == "LSW"     then have_data = false end
+                    if curr_col == "LSW"       then have_data = false end
+                    if curr_col == "GPS"       then have_data = false end
+                    if curr_col == "latitude"  then have_data = false end
+                    if curr_col == "longitude" then have_data = false end
                 else
                     -- always show
-                    if curr_col == "RQly(%)"  then have_data = true end
-                    if curr_col == "TQly(%)"  then have_data = true end
-                    if curr_col == "TPWR(mW)" then have_data = true end
-                    if curr_col == "RSNR(dB)" then have_data = true end
-                    if curr_col == "VFR(%)"   then have_data = true end
+                    if curr_col == "RQly(%)"   then have_data = true end
+                    if curr_col == "TQly(%)"   then have_data = true end
+                    if curr_col == "TPWR(mW)"  then have_data = true end
+                    if curr_col == "RSNR(dB)"  then have_data = true end
+                    if curr_col == "VFR(%)"    then have_data = true end
                 end
 
                 if have_data then

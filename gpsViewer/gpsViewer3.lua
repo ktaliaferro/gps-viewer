@@ -17,11 +17,10 @@ local M = {}
 ---- #                                                                       #
 ---- #########################################################################
 
--- This script display a log file as a graph
--- Original Author: Herman Kruisman (RealTadango) (original version: https://raw.githubusercontent.com/RealTadango/FrSky/master/OpenTX/LView/LView.lua)
--- Current Author: Offer Shmuely
--- Date: 2023
-local app_ver = "1.14"
+-- Original Authors: Herman Kruisman and Offer Shmuely (https://github.com/offer-shmuely/edgetx-x10-scripts/tree/main/SCRIPTS/TOOLS)
+-- Current Author: Kenny Taliaferro
+
+local app_ver = "1.0"
 
 function M.getVer()
     return app_ver
@@ -151,9 +150,16 @@ local graphSize = 0
 local graphTimeBase = 0
 local graphMinMaxEditorIndex = 0
 
-local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/LogViewer/bg1.png")
-local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/LogViewer/bg2.png")
-local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/LogViewer/bg3.png")
+local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg1.png")
+local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg2.png")
+local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg3.png")
+
+-- map data
+local img_map = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_map.png")
+local long_min = -97.6074597097314
+local long_max = -97.59857623367657
+local lat_min = 30.322538058896907
+local lat_max = 30.326649900592205
 
 -- Instantiate a new GUI object
 local ctx1 = m_libgui.newGUI()
@@ -162,6 +168,15 @@ local ctx3 = m_libgui.newGUI()
 local select_file_gui_init = false
 
 ---- #########################################################################
+
+local function getkey(table,value)
+  for k, v in pairs(table) do
+    if v == value then
+      return k
+    end
+  end
+  return nil
+end
 
 --------------------------------------------------------------
 local function log(fmt, ...)
@@ -224,11 +239,30 @@ local function collectData()
             --log(string.format("collectData: 1: %s, 2: %s, 3: %s, 4: %s, line: %s", vals[1], vals[2], vals[3], vals[4], line))
 
             for varIndex = 1, 4, 1 do
-                if sensorSelection[varIndex].idx >= FIRST_VALID_COL then
-                    local colId = sensorSelection[varIndex].colId
-                    --log(string.format("collectData: varIndex: %d, sensorSelectionId: %d, colId: %d, val: %d", varIndex, sensorSelection[varIndex].colId, colId, vals[colId]))
-                    _values[varIndex][valPos] = vals[colId]
+              if sensorSelection[varIndex].idx >= FIRST_VALID_COL then
+                local colId = sensorSelection[varIndex].colId
+                --log(string.format("collectData: varIndex: %d, sensorSelectionId: %d, colId: %d, val: %d", varIndex, sensorSelection[varIndex].colId, colId, vals[colId]))
+                gpsID = getkey(columns_by_header,"GPS")
+                local numbers = {}
+                local s = ""
+
+                if columns_by_header[colId] == "latitude" then
+                  numbers = {}
+                  s = vals[gpsID]
+                  for number in string_gmatch(s,"[^%s]+")
+                  do
+                    table.insert(numbers,number)
+                  end
+                  _values[varIndex][valPos] = numbers[1]
+                elseif columns_by_header[colId] == "longitude" then
+                  numbers = {}
+                  s = vals[gpsID]
+                  for number in string_gmatch(s,"[^%s]+") do table.insert(numbers,number) end
+                  _values[varIndex][valPos] = numbers[2]
+                else
+                  _values[varIndex][valPos] = vals[colId]
                 end
+              end
             end
 
             valPos = valPos + 1
@@ -379,7 +413,7 @@ local function read_and_index_file_list()
             lcd.clear()
             lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
             lcd.drawBitmap(img_bg2, 0, 0)
-            lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+            --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
             -- draw state
             lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
@@ -533,7 +567,7 @@ local function state_SPLASH(event, touchState)
     --log('elapsed: %d (t.durationMili: %d)', elapsed, splash_start_time)
     local elapsedMili = elapsed * 10;
     -- was 1500, but most the time will go anyway from the load of the scripts
-    if (elapsedMili >= 500) then
+    if (elapsedMili >= 0) then
         state = STATE.SELECT_INDEX_TYPE_INIT
     end
 
@@ -807,44 +841,48 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
             sensorSelection[1].colId = colWithData2ColByHeader(i)
         end
     )
+    if false then
+      ctx2.label(10, 80, 60, 24, "Field 2")
+      ctx2.dropDown(90, 80, 380, 24, columns_with_data, sensorSelection[2].idx,
+          function(obj)
+              local i = obj.selected
+              local var2 = columns_with_data[i]
+              log("Selected var2: " .. var2)
+              sensorSelection[2].idx = i
+              sensorSelection[2].colId = colWithData2ColByHeader(i)
+          end
+      )
 
-    ctx2.label(10, 80, 60, 24, "Field 2")
-    ctx2.dropDown(90, 80, 380, 24, columns_with_data, sensorSelection[2].idx,
-        function(obj)
-            local i = obj.selected
-            local var2 = columns_with_data[i]
-            log("Selected var2: " .. var2)
-            sensorSelection[2].idx = i
-            sensorSelection[2].colId = colWithData2ColByHeader(i)
-        end
-    )
+      ctx2.label(10, 105, 60, 24, "Field 3")
+      ctx2.dropDown(90, 105, 380, 24, columns_with_data, sensorSelection[3].idx,
+          function(obj)
+              local i = obj.selected
+              local var3 = columns_with_data[i]
+              log("Selected var3: " .. var3)
+              sensorSelection[3].idx = i
+              sensorSelection[3].colId = colWithData2ColByHeader(i)
+          end
+      )
 
-    ctx2.label(10, 105, 60, 24, "Field 3")
-    ctx2.dropDown(90, 105, 380, 24, columns_with_data, sensorSelection[3].idx,
-        function(obj)
-            local i = obj.selected
-            local var3 = columns_with_data[i]
-            log("Selected var3: " .. var3)
-            sensorSelection[3].idx = i
-            sensorSelection[3].colId = colWithData2ColByHeader(i)
-        end
-    )
-
-    ctx2.label(10, 130, 60, 24, "Field 4")
-    ctx2.dropDown(90, 130, 380, 24, columns_with_data, sensorSelection[4].idx,
-        function(obj)
-            local i = obj.selected
-            local var4 = columns_with_data[i]
-            log("Selected var4: " .. var4)
-            sensorSelection[4].idx = i
-            sensorSelection[4].colId = colWithData2ColByHeader(i)
-        end
-    )
+      ctx2.label(10, 130, 60, 24, "Field 4")
+      ctx2.dropDown(90, 130, 380, 24, columns_with_data, sensorSelection[4].idx,
+          function(obj)
+              local i = obj.selected
+              local var4 = columns_with_data[i]
+              log("Selected var4: " .. var4)
+              sensorSelection[4].idx = i
+              sensorSelection[4].colId = colWithData2ColByHeader(i)
+          end
+      )
+    end
 
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
-    sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
-    sensorSelection[3].colId = colWithData2ColByHeader(sensorSelection[3].idx)
-    sensorSelection[4].colId = colWithData2ColByHeader(sensorSelection[4].idx)
+    --sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
+    sensorSelection[2].colId = getkey(columns_by_header, "latitude")
+    --sensorSelection[3].colId = colWithData2ColByHeader(sensorSelection[3].idx)
+    sensorSelection[3].colId = getkey(columns_by_header, "longitude")
+    --sensorSelection[4].colId = colWithData2ColByHeader(sensorSelection[4].idx)
+    sensorSelection[4].idx = 1
 
     state = STATE.SELECT_SENSORS
     return 0
@@ -985,12 +1023,14 @@ local function state_PARSE_DATA_refresh(event, touchState)
             --log("PARSE_DATA: %d. %s %s", conversionSensorId, val, _values[conversionSensorId][i])
             --log("PARSE_DATA: %d. %s %d %d min:%d max:%d", conversionSensorId, _points[conversionSensorId].name, val, #_points[conversionSensorId].points, _points[conversionSensorId].min, _points[conversionSensorId].max)
 
-            if val > _points[conversionSensorId].max then
-                _points[conversionSensorId].max = val
-                _points[conversionSensorId].maxpos = i
-            elseif val < _points[conversionSensorId].min then
-                _points[conversionSensorId].min = val
-                _points[conversionSensorId].minpos = i
+            if val ~= nil then
+              if val > _points[conversionSensorId].max then
+                  _points[conversionSensorId].max = val
+                  _points[conversionSensorId].maxpos = i
+              elseif val < _points[conversionSensorId].min then
+                  _points[conversionSensorId].min = val
+                  _points[conversionSensorId].minpos = i
+              end
             end
 
             if cnt > 100 then
@@ -1019,15 +1059,15 @@ local function drawMain()
 
     -- draw background
     if state == STATE.SPLASH then
-        lcd.drawBitmap(img_bg1, 0, 0)
+        --lcd.drawBitmap(img_bg1, 0, 0)
     elseif state == STATE.SHOW_GRAPH then
-        lcd.drawBitmap(img_bg3, 0, 0)
+        --lcd.drawBitmap(img_bg3, 0, 0)
     else
         -- draw top-bar
         lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-        lcd.drawBitmap(img_bg2, 0, 0)
+        --lcd.drawBitmap(img_bg2, 0, 0)
     end
-    lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+    --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
     if state ~= STATE.SPLASH then
         img_bg1 = nil
@@ -1399,6 +1439,100 @@ local function drawGraph()
 end
 
 local function state_SHOW_GRAPH_refresh(event, touchState)
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+        state = STATE.SELECT_SENSORS_INIT
+        return 0
+    end
+  
+    lcd.clear()
+    lcd.drawBitmap(img_map, 0, 0)
+    
+    local x = 0
+    local y = 0
+    local z = 0
+    local x_old = 0
+    local y_old = 0
+    local z_old = 0
+    local dx = long_max - long_min
+    local dy = lat_max - lat_min
+    
+    local tele_max = _points[1]["max"]
+    local tele_min = _points[1]["min"]
+    dt = tele_max - tele_min
+    local c = nil
+    
+    local n_values = #_values[1]
+    local n_points = 100
+    local step_size = math.floor(n_values / n_points)
+    --for i= 1 ,10 ,1 do
+    local n_gps_values = 0
+    local n_map_values = 0
+    local use_lines = false
+    if use_lines then
+      -- draw graph using lines
+      for i = 1, n_values, step_size do
+        if _values[3][i] ~= nil and _values[2][i] ~= nil and _values[1][i] ~= nil then
+          if n_gps_values > 0 then
+            x_old = x
+            y_old = y
+          end
+          x = (_values[3][i] - long_min) / dx * LCD_W
+          y = LCD_H - (_values[2][i] - lat_min) / dy * LCD_H
+          z = (_values[1][i] - tele_min) / dt * 255
+          if z < 0 then z = 0 end
+          if z > 255 then z = 255 end
+          c = lcd.RGB(250,z,z)
+          if n_gps_values > 0 and x >= 0 and x <= LCD_W and y >=0 and y <= LCD_H then
+            lcd.drawLine(x_old,y_old,x,y,SOLID,c)
+            n_map_values = n_map_values + 1
+          end
+          n_gps_values = n_gps_values + 1
+        end
+      end
+    else
+      -- draw graph using rectangles
+      for i = 1, n_values, 1 do
+        if _values[3][i] ~= nil and _values[2][i] ~= nil and _values[1][i] ~= nil then
+          n_gps_values = n_gps_values + 1
+          x = (_values[3][i] - long_min) / dx * LCD_W
+          y = LCD_H - (_values[2][i] - lat_min) / dy * LCD_H
+          z = (_values[1][i] - tele_min) / dt * 255
+          if z < 0 then z = 0 end
+          if z > 255 then z = 255 end
+          c = lcd.RGB(250,z,z)
+          if x >= 0 and x <= LCD_W and y >=0 and y <= LCD_H then
+            lcd.drawFilledRectangle(x,y,4,4,c)
+            n_map_values = n_map_values + 1
+          end
+        end
+      end
+    end
+    if n_gps_values == 0 then
+      lcd.drawFilledRectangle(75,130,200,40,BLACK)
+      lcd.drawText( 80, 130, "No GPS Data", DBLSIZE + RED)
+    elseif n_map_values == 0 then
+      lcd.drawFilledRectangle(75,130,325,40,BLACK)
+      lcd.drawText( 80, 130, "No GPS Data on Map", DBLSIZE + RED)
+    end
+    
+    -- draw legend background
+    lcd.drawFilledRectangle(0,0,60,155,BLACK)
+    
+    -- draw field name
+    lcd.drawText(0,0,_points[1]["name"], WHITE + SMLSIZE)
+
+    -- draw scale
+    for i = 0, 25, 1 do
+      lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(250,i*10,i*10))
+    end
+    
+    -- draw labels
+    lcd.drawText(15, 15, string.format("%.1f", tele_min), WHITE + SMLSIZE)
+    lcd.drawText(15, 135, string.format("%.1f",tele_max), WHITE + SMLSIZE)
+    return 0
+end
+
+local function old_state_SHOW_GRAPH_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
         return 0
