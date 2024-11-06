@@ -169,7 +169,7 @@ local select_file_gui_init = false
 
 ---- #########################################################################
 
-local function getkey(table,value)
+local function get_key(table,value)
   for k, v in pairs(table) do
     if v == value then
       return k
@@ -199,6 +199,24 @@ local function toDuration1(totalSeconds)
     local seconds = totalSeconds - (minutes * 60)
 
     return doubleDigits(hours) .. ":" .. doubleDigits(minutes) .. ":" .. doubleDigits(seconds);
+end
+
+local function get_lat(s)
+  local coordinates = {}
+  for coordinate in string_gmatch(s,"[^%s]+")
+  do
+    table.insert(coordinates,coordinate)
+  end
+  return coordinates[1]
+end
+
+local function get_long(s)
+  local coordinates = {}
+  for coordinate in string_gmatch(s,"[^%s]+")
+  do
+    table.insert(coordinates,coordinate)
+  end
+  return coordinates[2]
 end
 
 local function collectData()
@@ -242,23 +260,11 @@ local function collectData()
               if sensorSelection[varIndex].idx >= FIRST_VALID_COL then
                 local colId = sensorSelection[varIndex].colId
                 --log(string.format("collectData: varIndex: %d, sensorSelectionId: %d, colId: %d, val: %d", varIndex, sensorSelection[varIndex].colId, colId, vals[colId]))
-                gpsID = getkey(columns_by_header,"GPS")
-                local numbers = {}
-                local s = ""
-
+                local gpsID = get_key(columns_by_header,"GPS")
                 if columns_by_header[colId] == "latitude" then
-                  numbers = {}
-                  s = vals[gpsID]
-                  for number in string_gmatch(s,"[^%s]+")
-                  do
-                    table.insert(numbers,number)
-                  end
-                  _values[varIndex][valPos] = numbers[1]
+                  _values[varIndex][valPos] = get_lat(vals[gpsID])
                 elseif columns_by_header[colId] == "longitude" then
-                  numbers = {}
-                  s = vals[gpsID]
-                  for number in string_gmatch(s,"[^%s]+") do table.insert(numbers,number) end
-                  _values[varIndex][valPos] = numbers[2]
+                  _values[varIndex][valPos] = get_long(vals[gpsID])
                 else
                   _values[varIndex][valPos] = vals[colId]
                 end
@@ -878,9 +884,9 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
 
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
     --sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
-    sensorSelection[2].colId = getkey(columns_by_header, "latitude")
+    sensorSelection[2].colId = get_key(columns_by_header, "latitude")
     --sensorSelection[3].colId = colWithData2ColByHeader(sensorSelection[3].idx)
-    sensorSelection[3].colId = getkey(columns_by_header, "longitude")
+    sensorSelection[3].colId = get_key(columns_by_header, "longitude")
     --sensorSelection[4].colId = colWithData2ColByHeader(sensorSelection[4].idx)
     sensorSelection[4].idx = 1
 
@@ -1458,19 +1464,18 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     
     local tele_max = _points[1]["max"]
     local tele_min = _points[1]["min"]
-    dt = tele_max - tele_min
+    local dt = tele_max - tele_min
     local c = nil
     
     local n_values = #_values[1]
     local n_points = 100
     local step_size = math.floor(n_values / n_points)
-    --for i= 1 ,10 ,1 do
     local n_gps_values = 0
     local n_map_values = 0
     local use_lines = false
     if use_lines then
       -- draw graph using lines
-      for i = 1, n_values, step_size do
+      for i = 1, n_values, 1 do
         if _values[3][i] ~= nil and _values[2][i] ~= nil and _values[1][i] ~= nil then
           if n_gps_values > 0 then
             x_old = x
@@ -1529,107 +1534,6 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- draw labels
     lcd.drawText(15, 15, string.format("%.1f", tele_min), WHITE + SMLSIZE)
     lcd.drawText(15, 135, string.format("%.1f",tele_max), WHITE + SMLSIZE)
-    return 0
-end
-
-local function old_state_SHOW_GRAPH_refresh(event, touchState)
-    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
-        state = STATE.SELECT_SENSORS_INIT
-        return 0
-    end
-
-    --if graphMode == GRAPH_MODE.MINMAX and event == EVT_PAGEDN_FIRST then
-    if graphMode == GRAPH_MODE.MINMAX and event == EVT_ROT_RIGHT then
-        graphMinMaxEditorIndex = graphMinMaxEditorIndex + 1
-
-        if graphMinMaxEditorIndex == 8 then
-            graphMinMaxEditorIndex = 0
-        end
-        if graphMinMaxEditorIndex == 2 and sensorSelection[2].idx == 0 then
-            graphMinMaxEditorIndex = 4
-        end
-        if graphMinMaxEditorIndex == 4 and sensorSelection[3].idx == 0 then
-            graphMinMaxEditorIndex = 6
-        end
-        if graphMinMaxEditorIndex == 6 and sensorSelection[4].idx == 0 then
-            graphMinMaxEditorIndex = 0
-        end
-        if graphMinMaxEditorIndex == 0 and sensorSelection[1].idx == 0 then
-            graphMinMaxEditorIndex = 2
-        end
-        --elseif graphMode == GRAPH_MODE.MINMAX and event == EVT_PAGEUP_FIRST then
-    elseif graphMode == GRAPH_MODE.MINMAX and event == EVT_ROT_LEFT then
-        graphMinMaxEditorIndex = graphMinMaxEditorIndex - 1
-
-        if graphMinMaxEditorIndex < 0 then
-            graphMinMaxEditorIndex = 7
-        end
-        if graphMinMaxEditorIndex == 7 and sensorSelection[4].idx == 0 then
-            graphMinMaxEditorIndex = 5
-        end
-        if graphMinMaxEditorIndex == 5 and sensorSelection[3].idx == 0 then
-            graphMinMaxEditorIndex = 3
-        end
-        if graphMinMaxEditorIndex == 3 and sensorSelection[2].idx == 0 then
-            graphMinMaxEditorIndex = 1
-        end
-        if graphMinMaxEditorIndex == 1 and sensorSelection[1].idx == 0 then
-            graphMinMaxEditorIndex = 7
-        end
-    elseif event == EVT_VIRTUAL_ENTER or event == EVT_ROT_BREAK then
-        -- mode state machine
-        if graphMode == GRAPH_MODE.CURSOR then
-            graphMode = GRAPH_MODE.MINMAX
-        else
-            graphMode = GRAPH_MODE.CURSOR
-        end
-
-    elseif event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
-        run_GRAPH_Adjust(1, graphMode)
-    elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
-        run_GRAPH_Adjust(-1, graphMode)
-    end
-
-    if event == EVT_TOUCH_SLIDE then
-        log("EVT_TOUCH_SLIDE")
-        log("EVT_TOUCH_SLIDE, startX:%d   x:%d", touchState.startX, touchState.x)
-        log("EVT_TOUCH_SLIDE, startY:%d   y:%d", touchState.startY, touchState.y)
-        local dx = touchState.startX - touchState.x
-        local adjust = math.floor(dx / 100)
-        log("EVT_TOUCH_SLIDE, dx:%d,   adjust:%d", dx, adjust)
-        run_GRAPH_Adjust(adjust, GRAPH_MODE.SCROLL)
-    end
-
-    -- move graph right or left
-    local adjust = getValue('ail')
-    if math.abs(adjust) > 100 then
-        if math.abs(adjust) < 800 then
-            adjust = adjust / 100
-        else
-            adjust = adjust / 50
-        end
-        if graphMode ~= GRAPH_MODE.MINMAX then
-            run_GRAPH_Adjust(adjust, GRAPH_MODE.SCROLL)
-        end
-    end
-
-    -- zoom graph
-    adjust = getValue('ele') / 200
-    if math.abs(adjust) > 0.5 then
-        if graphMode ~= GRAPH_MODE.MINMAX then
-            run_GRAPH_Adjust(adjust, GRAPH_MODE.ZOOM)
-        else
-            run_GRAPH_Adjust(-adjust, GRAPH_MODE.MINMAX)
-        end
-    end
-
-    adjust = getValue('rud') / 200
-    if math.abs(adjust) > 0.5 then
-        run_GRAPH_Adjust(adjust, GRAPH_MODE.CURSOR)
-    end
-
-    drawGraph()
-
     return 0
 end
 

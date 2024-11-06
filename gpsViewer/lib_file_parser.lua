@@ -72,7 +72,7 @@ function M.getFileDataInfo(fileName)
     columns_by_header = M.m_utils.split(headerLine)
     
     if contains(columns_by_header,"GPS") then
-      i = #columns_by_header
+      local i = #columns_by_header
       columns_by_header[i+1]="longitude"
       columns_by_header[i+2]="latitude"
 
