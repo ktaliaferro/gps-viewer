@@ -150,16 +150,41 @@ local graphSize = 0
 local graphTimeBase = 0
 local graphMinMaxEditorIndex = 0
 
-local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg1.png")
-local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg2.png")
-local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg3.png")
+--local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg1.png")
+--local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg2.png")
+--local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg3.png")
 
--- map data
-local img_map = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_map.png")
-local long_min = -97.6074597097314
-local long_max = -97.59857623367657
-local lat_min = 30.322538058896907
-local lat_max = 30.326649900592205
+local maps = {
+    {
+      name = "ARCA small",
+      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
+      long_min = -97.6074597097314,
+      long_max = -97.59857623367657,
+      lat_min = 30.322538058896907,
+      lat_max = 30.326649900592205
+    },
+    {
+      name = "ARCA large",
+      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
+      long_min = -97.61791942201334,
+      long_max = -97.5870073139149,
+      lat_min = 30.315438505562526,
+      lat_max = 30.330617687727617
+    }
+}
+
+map_names = {}
+for i=1, #maps, 1 do
+  map_names[i]=maps[i]["name"]
+end
+
+local selected_map = 1
+
+local styles = {"Points", "Curve"}
+local selected_style=1
+
+local point_sizes = {1,2,3,4}
+local selected_point_size = 4
 
 -- Instantiate a new GUI object
 local ctx1 = m_libgui.newGUI()
@@ -418,7 +443,7 @@ local function read_and_index_file_list()
             -- draw top-bar
             lcd.clear()
             lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-            lcd.drawBitmap(img_bg2, 0, 0)
+            --lcd.drawBitmap(img_bg2, 0, 0)
             --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
             -- draw state
@@ -834,11 +859,11 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     ctx2 = nil
     ctx2 = m_libgui.newGUI()
 
-    ctx2.label(10, 25, 120, 24, "Select sensors...", BOLD)
+    ctx2.label(10, 25, 120, 24, "sensor...", BOLD)
 
     log("setting field1...")
-    ctx2.label(10, 55, 60, 24, "Field 1")
-    ctx2.dropDown(90, 55, 380, 24, columns_with_data, sensorSelection[1].idx,
+    ctx2.label(10, 55, 60+10, 24, "Sensor")
+    ctx2.dropDown(90+10, 55, 380-10, 24, columns_with_data, sensorSelection[1].idx,
         function(obj)
             local i = obj.selected
             local var1 = columns_with_data[i]
@@ -847,37 +872,33 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
             sensorSelection[1].colId = colWithData2ColByHeader(i)
         end
     )
+    ctx2.label(10, 80, 60+10, 24, "Map")
+    ctx2.dropDown(90+10, 80, 380-10, 24, map_names, 1,
+        function(obj)
+            local i = obj.selected
+            local var2 = map_names[i]
+            log("Selected map: " .. var2)
+            selected_map = i
+        end
+    )
+    ctx2.label(10, 105, 60+10, 24, "Style")
+    ctx2.dropDown(90+10, 105, 380-10, 24, styles, 1,
+        function(obj)
+            local i = obj.selected
+            local var3 = styles[i]
+            log("Selected style: " .. var3)
+            selected_style = i
+        end
+    )
+    
     if false then
-      ctx2.label(10, 80, 60, 24, "Field 2")
-      ctx2.dropDown(90, 80, 380, 24, columns_with_data, sensorSelection[2].idx,
+      ctx2.label(10, 130, 60+10, 24, "Point Size")
+      ctx2.dropDown(90+10, 130, 380-10, 24, point_sizes, 4,
           function(obj)
               local i = obj.selected
-              local var2 = columns_with_data[i]
-              log("Selected var2: " .. var2)
-              sensorSelection[2].idx = i
-              sensorSelection[2].colId = colWithData2ColByHeader(i)
-          end
-      )
-
-      ctx2.label(10, 105, 60, 24, "Field 3")
-      ctx2.dropDown(90, 105, 380, 24, columns_with_data, sensorSelection[3].idx,
-          function(obj)
-              local i = obj.selected
-              local var3 = columns_with_data[i]
-              log("Selected var3: " .. var3)
-              sensorSelection[3].idx = i
-              sensorSelection[3].colId = colWithData2ColByHeader(i)
-          end
-      )
-
-      ctx2.label(10, 130, 60, 24, "Field 4")
-      ctx2.dropDown(90, 130, 380, 24, columns_with_data, sensorSelection[4].idx,
-          function(obj)
-              local i = obj.selected
-              local var4 = columns_with_data[i]
-              log("Selected var4: " .. var4)
-              sensorSelection[4].idx = i
-              sensorSelection[4].colId = colWithData2ColByHeader(i)
+              local var4 = point_sizes[i]
+              log("Selected point size: " .. var4)
+              selected_point_size = i
           end
       )
     end
@@ -1076,7 +1097,7 @@ local function drawMain()
     --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
     if state ~= STATE.SPLASH then
-        img_bg1 = nil
+        --img_bg1 = nil
     end
 
     if filename ~= nil then
@@ -1451,7 +1472,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     end
   
     lcd.clear()
-    lcd.drawBitmap(img_map, 0, 0)
+    --lcd.drawBitmap(img_map, 0, 0)
+    lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
     
     local x = 0
     local y = 0
@@ -1459,8 +1481,6 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local x_old = 0
     local y_old = 0
     local z_old = 0
-    local dx = long_max - long_min
-    local dy = lat_max - lat_min
     
     local tele_max = _points[1]["max"]
     local tele_min = _points[1]["min"]
@@ -1472,9 +1492,15 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local step_size = math.floor(n_values / n_points)
     local n_gps_values = 0
     local n_map_values = 0
-    local use_lines = false
-    if use_lines then
-      -- draw graph using lines
+    local use_lines = true
+    local long_min = maps[selected_map]["long_min"]
+    local long_max = maps[selected_map]["long_max"]
+    local lat_min = maps[selected_map]["lat_min"]
+    local lat_max = maps[selected_map]["lat_max"]
+    local dx = long_max - long_min
+    local dy = lat_max - lat_min
+    if styles[selected_style] ==  "Curve" then
+      -- draw graph using line segments
       for i = 1, n_values, 1 do
         if _values[3][i] ~= nil and _values[2][i] ~= nil and _values[1][i] ~= nil then
           if n_gps_values > 0 then
@@ -1495,7 +1521,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         end
       end
     else
-      -- draw graph using rectangles
+      -- draw graph using rectangles     
       for i = 1, n_values, 1 do
         if _values[3][i] ~= nil and _values[2][i] ~= nil and _values[1][i] ~= nil then
           n_gps_values = n_gps_values + 1
@@ -1504,9 +1530,9 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
           z = (_values[1][i] - tele_min) / dt * 255
           if z < 0 then z = 0 end
           if z > 255 then z = 255 end
-          c = lcd.RGB(250,z,z)
+          c = lcd.RGB(255,z,z)
           if x >= 0 and x <= LCD_W and y >=0 and y <= LCD_H then
-            lcd.drawFilledRectangle(x,y,4,4,c)
+            lcd.drawFilledRectangle(x,y,selected_point_size,selected_point_size,c)
             n_map_values = n_map_values + 1
           end
         end
@@ -1528,12 +1554,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
     -- draw scale
     for i = 0, 25, 1 do
-      lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(250,i*10,i*10))
+      lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(255,255-i*10,255-i*10))
     end
     
     -- draw labels
-    lcd.drawText(15, 15, string.format("%.1f", tele_min), WHITE + SMLSIZE)
-    lcd.drawText(15, 135, string.format("%.1f",tele_max), WHITE + SMLSIZE)
+    lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
+    lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
     return 0
 end
 

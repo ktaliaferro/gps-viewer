@@ -18,15 +18,27 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-To use this app at your local airfield, add a satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua with the name of the file and the maximum and minimum longitude and latitude coordinates of your image.
+To use this app at your local airfield, add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.
 
 ```lua
--- map data
-local img_map = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_map.png")
-local long_min = -97.6074597097314
-local long_max = -97.59857623367657
-local lat_min = 30.322538058896907
-local lat_max = 30.326649900592205
+local maps = {
+    {
+      name = "ARCA small",
+      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
+      long_min = -97.6074597097314,
+      long_max = -97.59857623367657,
+      lat_min = 30.322538058896907,
+      lat_max = 30.326649900592205
+    },
+    {
+      name = "ARCA large",
+      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
+      long_min = -97.61791942201334,
+      long_max = -97.5870073139149,
+      lat_min = 30.315438505562526,
+      lat_max = 30.330617687727617
+    }
+}
 ```
 
 ## Log File Requirements

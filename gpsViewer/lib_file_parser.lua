@@ -81,7 +81,7 @@ function M.getFileDataInfo(fileName)
     start_index = index
     io.seek(hFile, index)
 
-    -- stop after 2M (1000x2028)
+    -- stop after 2M (1000x2048)
     local sample_col_data = nil
     for i = 1, 1000 do
         --M.m_log.info("profiler: start")
