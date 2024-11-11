@@ -689,7 +689,7 @@ local function state_SELECT_FILE_init(event, touchState)
         log("creating new window gui")
         --ctx1 = libGUI.newGUI()
 
-        ctx1.label(10, 25, 120, 24, "log file...", BOLD)
+        ctx1.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
 
         --log("setting model filter...")
         ctx1.label(10, 55, 60, 24, "Model")
@@ -859,7 +859,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     ctx2 = nil
     ctx2 = m_libgui.newGUI()
 
-    ctx2.label(10, 25, 120, 24, "sensor...", BOLD)
+    ctx2.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
 
     log("setting field1...")
     ctx2.label(10, 55, 60+10, 24, "Sensor")
@@ -961,17 +961,15 @@ local function display_read_data_progress(conversionSensorId, conversionSensorPr
     end
     local y = 85
     local dy = 25
-    lcd.drawText(5, y, "Parsing Field 1: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Sensor: ", TEXT_COLOR)
     drawProgress(140, y, done_var_1, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Field 2: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Latitude: ", TEXT_COLOR)
     drawProgress(140, y, done_var_2, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Field 3: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Longitude: ", TEXT_COLOR)
     drawProgress(140, y, done_var_3, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Field 4: ", TEXT_COLOR)
-    drawProgress(140, y, done_var_4, valPos)
 
 end
 

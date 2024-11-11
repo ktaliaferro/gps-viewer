@@ -1,8 +1,14 @@
 # GPS Viewer
 
-GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality.  This app is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer), which is for plotting telemetry with respect to time.
+GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality. 
 
-![screenshot](images/screenshot.png)
+![screenshot](images/screenshot_points.png)
+
+It's also useful for assessing flight path consistency over multiple laps and verifying that the aircraft remains within the desired air space.
+
+![screenshot](images/screenshot_curve.png)
+
+GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer), which is for plotting telemetry with respect to time.
 
 ## Installation
 
@@ -45,4 +51,4 @@ local maps = {
 
 For the app to function, the logged flight data must have a "GPS" column with latitude and longitude separated by a space.  e.g. "30.324000 -97.603500".
 
-Log files larger than 2MB are ignored.
+To keep load times reasonable, log files larger than 2MB are ignored.
