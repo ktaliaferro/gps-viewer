@@ -12,7 +12,9 @@ GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/ed
 
 ## Installation
 
-Copy gpsViewer.lua and the gpsViewer directory to the /SCRIPTS/TOOLS/ directory on your transmitter.
+Copy `gpsViewer.lua` and the `gpsViewer` directory to the `/SCRIPTS/TOOLS` directory on your transmitter.
+
+Optionally copy the sample log file `SampleLog-2024-10-10-113001.csv` to the `/LOGS` directory on your transmitter.
 
 ## Use
 
@@ -24,7 +26,7 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-To use this app at your local airfield, add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.
+To use this app at your local airfield, add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
 
 ```lua
 local maps = {
@@ -49,6 +51,6 @@ local maps = {
 
 ## Log File Requirements
 
-For the app to function, the logged flight data must have a "GPS" column with latitude and longitude separated by a space.  e.g. "30.324000 -97.603500".
+For the app to function, the logged flight data must have a "GPS" column with latitude and longitude separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
 
-To keep load times reasonable, log files larger than 2 MB are ignored.
+To keep load times reasonable, log files larger than 2 MB are ignored.  Log files with less than 60 seconds of data are also ignored.
