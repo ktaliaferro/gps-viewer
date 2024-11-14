@@ -18,12 +18,6 @@
 
 local app_ver = "1.0"
 
--- to get help:
--- change in lib_log.lua to "ENABLE_LOG_FILE=true"
--- change in lib_log.lua to "ENABLE_LOG_TO_FILE= false"
--- run the script ...
--- send me the log file that will be created on: /SCRIPTS/TOOLS/LogViewer/app.log
-
 local app_name = "gpsViewer"
 
 local m_log = nil

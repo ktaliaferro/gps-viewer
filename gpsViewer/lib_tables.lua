@@ -52,21 +52,16 @@ function M.list_ordered_insert(lst, newVal, cmp, firstValAt)
     -- sort
     for i = firstValAt, #lst, 1 do
         -- remove duplication
-        --M.m_log.info("list_ordered_insert - %s ? %s",  newVal, lst[i] )
         if newVal == lst[i] then
-            --M.table_print("list_ordered_insert - duplicated", lst)
             return
         end
 
         if cmp(newVal, lst[i]) == true then
             table.insert(lst, i, newVal)
-            --M.table_print("list_ordered_insert - inserted", lst)
             return
         end
-        --M.table_print("list_ordered_insert-loop", lst)
     end
     table.insert(lst, newVal)
-    --M.table_print("list_ordered_insert-inserted-to-end", lst)
 end
 
 

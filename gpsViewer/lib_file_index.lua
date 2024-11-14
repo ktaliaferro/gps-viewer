@@ -14,16 +14,12 @@ M.log_files_index_info = {}
 function M.compare_file_names_inc(a, b)
     local a1 = string.sub(a.file_name, -21, -5)
     local b1 = string.sub(b.file_name, -21, -5)
-    --M.m_log.info("ab, %s ? %s", a, b)
-    --M.m_log.info("a1b1, %s ? %s", a1, b1)
     return a1 < b1
 end
 
 function M.compare_file_names_dec(a, b)
     local a1 = string.sub(a.file_name, -21, -5)
     local b1 = string.sub(b.file_name, -21, -5)
-    --M.m_log.info("ab, %s ? %s", a, b)
-    --M.m_log.info("a1b1, %s ? %s", a1, b1)
     return a1 > b1
 end
 
@@ -33,7 +29,6 @@ function M.indexInit()
 end
 
 local function updateFile(file_name, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str)
-    --M.m_log.info("updateFile(%s)", file_name)
 
     local new_file = {
         file_name = m_utils.trim(file_name),
@@ -96,7 +91,6 @@ function M.indexRead()
     -- list actual files on disk
     local files_on_disk = {}
     for fn in dir("/LOGS") do
-        --m_log.info("files_on_disk fn: %s", fn)
         files_on_disk[fn] = "OK"
     end
     m_tables.table_print("files_on_disk", files_on_disk)
@@ -108,12 +102,10 @@ function M.indexRead()
     io.seek(hFile, index)
     local data2 = io.read(hFile, 2048 * 32)
 
-    --M.indexPrint("indexRead-should-be-empty")
     local is_index_have_deleted_files = false
     for line in string.gmatch(data2, "([^\n]+)\n") do
 
         if string.sub(line, 1, 1) ~= "#" then
-            --M.m_log.info("indexRead: index-line: %s", line)
             local values = m_utils.split(line)
 
             local file_name = m_utils.trim(values[1])
@@ -124,7 +116,6 @@ function M.indexRead()
             local start_index = m_utils.trim(values[6])
             local col_with_data_str = m_utils.trim_safe(values[7])
             local all_col_str = m_utils.trim_safe(values[8])
-            --M.m_log.info(string.format("indexRead: got: file_name: %s, start_time: %s, end_time: %s, total_seconds: %s, total_lines: %s, start_index: %s, col_with_data_str: %s, all_col_str: %s", file_name, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str))
 
             -- if file from index file, still exist on disk?
             if files_on_disk[file_name] == "OK" then
@@ -141,19 +132,13 @@ function M.indexRead()
     if is_index_have_deleted_files == true then
         M.indexSave()
     end
-
-    --M.indexPrint("end of indexRead")
 end
 
 function M.getFileDataInfo(file_name)
-    --M.m_log.info("getFileDataInfo(%s)", file_name)
-    --M.indexPrint("M.getFileDataInfo-start")
 
     for i = 1, #M.log_files_index_info do
         local f_info = M.log_files_index_info[i]
-        --M.m_log.info("getFileDataInfo: %s ?= %s", file_name, f_info.file_name)
         if file_name == f_info.file_name then
-            --M.m_log.info("getFileDataInfo: info from cache %s", file_name)
             return false, f_info.start_time, f_info.end_time, f_info.total_seconds, f_info.total_lines, f_info.start_index, f_info.col_with_data_str, f_info.all_col_str
         end
     end
@@ -182,7 +167,6 @@ function M.getFileListDec()
     local log_files_index_info_dec = {}
     for i = 1, #M.log_files_index_info, 1 do
         local info = M.log_files_index_info[i]
-        --M.m_log.info("getFileListDec(): adding f: %s", info.file_name)
         M.m_tables.list_ordered_insert(log_files_index_info_dec, info, M.compare_file_names_dec, 1)
     end
     return log_files_index_info_dec
@@ -190,7 +174,6 @@ end
 
 function M.indexSave()
     M.m_log.info("indexSave()")
-    --local is_exist = is_file_exists(M.idx_file_name)
     local hFile = io.open(M.idx_file_name, "w")
 
     -- header
@@ -200,7 +183,6 @@ function M.indexSave()
     local ver_line = "# api_ver=3\n"
     io.write(hFile, ver_line)
 
-    --M.indexPrint("M.log_files_index_info")
     M.m_log.info("#M.log_files_index_info: %d", #M.log_files_index_info)
     for i = 1, #M.log_files_index_info, 1 do
         local info = M.log_files_index_info[i]
@@ -220,15 +202,6 @@ function M.indexSave()
 
     io.close(hFile)
 end
-
-
---function M.getFileColumns(file_name)
---    M.m_log.info("getFileColumns(%s)", file_name)
---    local start_time, total_seconds, total_lines, col_with_data_str = M.getFileDataInfo(file_name)
---    M.m_log.info("getFileColumns4(%s)", file_name)
---    M.m_log.info("getFileColumns(%s) --> %s", file_name, col_with_data_str)
---    return col_with_data_str
---end
 
 return M
 

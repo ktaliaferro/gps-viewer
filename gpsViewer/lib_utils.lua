@@ -24,26 +24,10 @@ function M.split(text)
         cnt = cnt + 1
         result[cnt] = val
     end
-    --M.m_log.info("split: #col: %d (%s)", cnt, text)
-    --M.m_log.info("split: #col: %d (1-%s, 2-%s)", cnt, result[1], result[2])
     return result, cnt
 end
 
---function M.split2(text)
---    local cnt = 0
---    local result = {}
---    --local text2 = string_gsub(text, ",,", ", ,")
---    for val in string_gmatch(text, "([^,]+),?") do
---        cnt = cnt + 1
---        result[cnt] = val
---    end
---    --M.m_log.info("split: #col: %d (%s)", cnt, text)
---    --M.m_log.info("split: #col: %d (1-%s, 2-%s)", cnt, result[1], result[2])
---    return result, cnt
---end
-
 function M.split_pipe(text)
-    -- M.m_log.info("split_pipe(%s)", text)
     local cnt = 0
     local result = {}
     for val in string.gmatch(string.gsub(text, "||", "| |"), "([^|]+)|?") do
@@ -69,7 +53,6 @@ function M.trim_safe(s)
         return ""
     end
     return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
-    --string.gsub(text, ",,", ", ,")
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -93,7 +76,6 @@ function M.periodicHasPassed(t)
     end
 
     local elapsed = getTime() - t.startTime;
-    --m_log.info('elapsed: %d (t.durationMili: %d)', elapsed, t.durationMili)
     local elapsedMili = elapsed * 10;
     if (elapsedMili < t.durationMili) then
         return false;
@@ -103,9 +85,7 @@ end
 
 function M.periodicGetElapsedTime(t)
     local elapsed = getTime() - t.startTime;
-    --m_log.info("elapsed: %d",elapsed);
     local elapsedMili = elapsed * 10;
-    --m_log.info("elapsedMili: %d",elapsedMili);
     return elapsedMili;
 end
 
