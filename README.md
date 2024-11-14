@@ -53,4 +53,7 @@ local maps = {
 
 For the app to function, the logged flight data must have a "GPS" column with latitude and longitude separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
 
-To keep load times reasonable, log files larger than 2 MB are ignored.  Log files with less than 60 seconds of data are also ignored.
+Log files are ignored if they
+- are over 2 MB,
+- have less then 60 seconds of data,
+- or don't have a GPS column.

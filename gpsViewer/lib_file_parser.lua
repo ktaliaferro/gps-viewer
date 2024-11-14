@@ -41,7 +41,7 @@ function M.getFileDataInfo(fileName)
 
     local hFile = io.open("/LOGS/" .. fileName, "r")
     if hFile == nil then
-        return nil, nil, nil, nil, nil
+        return nil, nil, nil, nil, nil, nil, nil
     end
 
     local buffer = ""
@@ -63,7 +63,7 @@ function M.getFileDataInfo(fileName)
     io.seek(hFile,0)
     if string.len(s) > 0 then
       M.m_log.info("error: file too long, %s", fileName)
-      return nil, nil, nil, nil, nil, nil
+      return nil, nil, nil, nil, nil, nil, nil
     end
 
     -- read Header
@@ -71,7 +71,7 @@ function M.getFileDataInfo(fileName)
     local index = string.find(data1, "\n")
     if index == nil then
         M.m_log.info("Header could not be found, file: %s", fileName)
-        return nil, nil, nil, nil, nil, nil
+        return nil, nil, nil, nil, nil, nil, nil
     end
 
     -- get header line
@@ -85,7 +85,9 @@ function M.getFileDataInfo(fileName)
       local i = #columns_by_header
       columns_by_header[i+1]="longitude"
       columns_by_header[i+2]="latitude"
-
+    else
+      M.m_log.info("error: no GPS column, %s", fileName)
+      return nil, nil, nil, nil, nil, nil, nil
     end
 
     start_index = index
@@ -173,6 +175,7 @@ function M.getFileDataInfo(fileName)
                     if curr_col == "TPWR(mW)"  then have_data = true end
                     if curr_col == "RSNR(dB)"  then have_data = true end
                     if curr_col == "VFR(%)"    then have_data = true end
+                    if curr_col == "TQly"      then have_data = true end
                 end
 
                 if have_data then
@@ -189,7 +192,7 @@ function M.getFileDataInfo(fileName)
     io.close(hFile)
 
     M.m_log.info("error: backstop: file too long, %s", fileName)
-    return nil, nil, nil, nil, nil, nil
+    return nil, nil, nil, nil, nil, nil, nil
 end
 
 
