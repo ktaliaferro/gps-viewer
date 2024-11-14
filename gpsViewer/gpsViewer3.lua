@@ -138,6 +138,8 @@ local xStep = (graphConfig.x_end - graphConfig.x_start) / 100
 
 local cursor = 0
 
+local gui_drawn = false
+
 local GRAPH_MODE = {
     CURSOR = 0,
     ZOOM = 1,
@@ -435,27 +437,32 @@ local function read_and_index_file_list()
         m_index_file.indexRead(log_file_list_raw)
     end
 
-    for i = 1, 10, 1 do
-        log_file_list_raw_idx = log_file_list_raw_idx + 1
+    while true do
+        if gui_drawn == false then
+          log_file_list_raw_idx = log_file_list_raw_idx + 1
+        end
         local filename = log_file_list_raw[log_file_list_raw_idx]
         if filename ~= nil then
+            if gui_drawn == false then
+              -- draw top-bar
+              lcd.clear()
+              lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
+              --lcd.drawBitmap(img_bg2, 0, 0)
+              --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
-            -- draw top-bar
-            lcd.clear()
-            lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-            --lcd.drawBitmap(img_bg2, 0, 0)
-            --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+              -- draw state
+              lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
+              lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
+              lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
+              lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
 
-            -- draw state
-            lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
-            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
-            lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
-            lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
+              drawProgress(160, 60, log_file_list_raw_idx, #log_file_list_raw)
 
-            drawProgress(160, 60, log_file_list_raw_idx, #log_file_list_raw)
-
-            log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
-
+              log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
+              
+              gui_drawn = true
+              return false
+            end
             local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
             if modelName == nil then
                 goto continue
@@ -473,16 +480,20 @@ local function read_and_index_file_list()
 
             -- due to cpu load, early exit
             if is_new then
+                gui_drawn = false
                 return false
             end
         end
 
         if log_file_list_raw_idx >= #log_file_list_raw then
+            gui_drawn = false
             return true
         end
         :: continue ::
+        gui_drawn = false
     end
 
+    gui_drawn = false
     return false
 
 end
