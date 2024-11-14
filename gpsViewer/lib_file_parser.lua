@@ -55,6 +55,16 @@ function M.getFileDataInfo(fileName)
     local columns_by_header = {}
     local columns_is_have_data = {}
     local columns_with_data = {}
+    
+    -- check file size
+    local max_size_mb = 2
+    io.seek(hFile, max_size_mb * 1024 * 1024)
+    s = io.read(hFile, 2)
+    io.seek(hFile,0)
+    if string.len(s) > 0 then
+      M.m_log.info("error: file too long, %s", fileName)
+      return nil, nil, nil, nil, nil, nil
+    end
 
     -- read Header
     local data1 = io.read(hFile, 2048)
@@ -81,9 +91,9 @@ function M.getFileDataInfo(fileName)
     start_index = index
     io.seek(hFile, index)
 
-    -- stop after 10M (5000x2048)
+    -- as a backstop, stop after 2x max file size above
     local sample_col_data = nil
-    for i = 1, 5000 do
+    for i = 1, max_size_mb * 1024 do
         --M.m_log.info("profiler: start")
         --local t1 =getTime()
         local data2 = io.read(hFile, 2048)
@@ -203,7 +213,9 @@ function M.getFileDataInfo(fileName)
 
     io.close(hFile)
 
-    M.m_log.info("error: file too long, %s", fileName)
+    if false then
+      M.m_log.info("error: backstop: file too long, %s", fileName)
+    end
     return nil, nil, nil, nil, nil, nil
 end
 
