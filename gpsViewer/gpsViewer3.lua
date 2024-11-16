@@ -395,67 +395,57 @@ local function read_and_index_file_list()
 
         log_file_list_raw = get_log_files_list()
 
-        log_file_list_raw_idx = 0
+        log_file_list_raw_idx = 1
         m_index_file.indexRead(log_file_list_raw)
     end
-
+ 
     while true do
         if gui_drawn == false then
-          log_file_list_raw_idx = log_file_list_raw_idx + 1
-        end
-        local filename = log_file_list_raw[log_file_list_raw_idx]
-        if filename ~= nil then
-            if gui_drawn == false then
-              -- draw top-bar
-              lcd.clear()
-              lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-              --lcd.drawBitmap(img_bg2, 0, 0)
-              --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+            -- Separate out the drawing of the GUI into a separate execution of the run function.
+            -- Otherwise, it the GUI will be blank while the first file is indexing.
+            local filename = log_file_list_raw[log_file_list_raw_idx]
+            if filename ~= nil then
+                -- draw top-bar
+                lcd.clear()
+                lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
+                --lcd.drawBitmap(img_bg2, 0, 0)
+                --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
-              -- draw state
-              lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
-              lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
-              lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
-              lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
+                -- draw state
+                lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
+                lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
+                lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
+                lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
 
-              drawProgress(160, 60, log_file_list_raw_idx, #log_file_list_raw)
+                drawProgress(160, 60, log_file_list_raw_idx, #log_file_list_raw)
 
-              log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
-              
-              gui_drawn = true
-              return false
+                log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
             end
-            local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
-            if modelName == nil then
-                goto continue
+            gui_drawn = true
+            return false
+        else
+            -- index the log file
+            local filename = log_file_list_raw[log_file_list_raw_idx]
+            if filename ~= nil then
+                local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
+                if modelName ~= nil then
+                    local model_day = string.format("%s-%s-%s", year, month, day)
+
+                    -- read file
+                    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(filename)
+
+                    log("read_and_index_file_list: total_seconds: %s", total_seconds)
+                    m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
+                    m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
+                end
             end
-            local model_day = string.format("%s-%s-%s", year, month, day)
-
-            -- read file
-            local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(filename)
-
-            log("read_and_index_file_list: total_seconds: %s", total_seconds)
-            m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
-            m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
-
-            -- due to cpu load, early exit
-            if is_new then
-                gui_drawn = false
-                return false
-            end
-        end
-
-        if log_file_list_raw_idx >= #log_file_list_raw then
+            log_file_list_raw_idx = log_file_list_raw_idx + 1
             gui_drawn = false
-            return true
+            if log_file_list_raw_idx >= #log_file_list_raw then
+                return true
+            end
         end
-        :: continue ::
-        gui_drawn = false
     end
-
-    gui_drawn = false
-    return false
-
 end
 
 local function onLogFileChange(obj)
