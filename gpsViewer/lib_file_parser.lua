@@ -63,6 +63,7 @@ function M.getFileDataInfo(fileName)
     io.seek(hFile,0)
     if string.len(s) > 0 then
       M.m_log.info("error: file too long, %s", fileName)
+      io.close(hFile)
       return nil, nil, nil, nil, nil, nil, nil
     end
 
@@ -71,6 +72,7 @@ function M.getFileDataInfo(fileName)
     local index = string.find(data1, "\n")
     if index == nil then
         M.m_log.info("Header could not be found, file: %s", fileName)
+        io.close(hFile)
         return nil, nil, nil, nil, nil, nil, nil
     end
 
@@ -87,6 +89,7 @@ function M.getFileDataInfo(fileName)
       columns_by_header[i+2]="latitude"
     else
       M.m_log.info("error: no GPS column, %s", fileName)
+      io.close(hFile)
       return nil, nil, nil, nil, nil, nil, nil
     end
 
