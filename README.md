@@ -22,6 +22,8 @@ To open the app, press the system button on your transmitter and select the GPS 
 
 To move forward and backward between screens, use the next and previous page buttons on your transmitter.
 
+Once you get to the map screen, use the aileron stick to scroll forward and backward in time and inspect individual data points.  Use the rudder stick to fine tune your selection.
+
 To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image

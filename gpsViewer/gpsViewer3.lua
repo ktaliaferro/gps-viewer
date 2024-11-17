@@ -182,6 +182,8 @@ local ctx2 = m_libgui.newGUI()
 local ctx3 = m_libgui.newGUI()
 local select_file_gui_init = false
 
+local selected_point = 1
+
 ---- #########################################################################
 
 local function get_key(table,value)
@@ -1108,6 +1110,35 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
       lcd.drawText( 80, 130, "No GPS Data on Map", DBLSIZE + RED)
     end
     
+    -- use aileron stick to roughtly select point
+    adjust = getValue('ail') / 1024
+    if math.abs(adjust) > 0.2 then
+      selected_point = math.floor(selected_point + adjust * 30)
+      if selected_point < 1 then selected_point = 1 end
+      if selected_point > n_values then selected_point = n_values end
+    end
+
+    -- use rudder stick to fine tune selected point
+    adjust = getValue('rud') / 1024
+    if math.abs(adjust) > 0.2 then
+      selected_point = math.floor(selected_point + adjust * 2)
+      if selected_point < 1 then selected_point = 1 end
+      if selected_point > n_values then selected_point = n_values end
+    end
+
+    -- draw crosshairs on selected point
+    x = (_values[3][selected_point] - long_min) / dx * LCD_W
+    y = LCD_H - (_values[2][selected_point] - lat_min) / dy * LCD_H
+    lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
+    lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
+
+    -- show telemetry of selected point
+    lcd.drawFilledRectangle(0,LCD_H-80,105,80,BLACK)
+    lcd.drawText(0,LCD_H-80,"Time: " .. toDuration1(math.floor(current_session.total_seconds * (selected_point - 1) / current_session.total_lines)), WHITE + SMLSIZE)
+    lcd.drawText(0,LCD_H-60,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
+    lcd.drawText(0,LCD_H-40,"lat" .. string.format(": %.4f", _values[2][selected_point]), WHITE + SMLSIZE)
+    lcd.drawText(0,LCD_H-20,"long" .. string.format(": %.4f", _values[3][selected_point]), WHITE + SMLSIZE)
+
     -- draw legend background
     lcd.drawFilledRectangle(0,0,60,155,BLACK)
     
@@ -1119,10 +1150,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
       lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(255,255-i*10,255-i*10))
     end
     
-    -- draw labels
+    -- draw scale labels
     lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
     lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
+
     return 0
+
 end
 
 function M.init()
