@@ -183,6 +183,7 @@ local ctx3 = m_libgui.newGUI()
 local select_file_gui_init = false
 
 local selected_point = 1
+local show_help = true
 
 ---- #########################################################################
 
@@ -201,21 +202,13 @@ local function log(fmt, ...)
 end
 --------------------------------------------------------------
 
-local function doubleDigits(value)
-    if value < 10 then
-        return "0" .. value
-    else
-        return value
-    end
-end
-
 local function toDuration1(totalSeconds)
     local hours = math_floor(totalSeconds / 3600)
     totalSeconds = totalSeconds - (hours * 3600)
     local minutes = math_floor(totalSeconds / 60)
     local seconds = totalSeconds - (minutes * 60)
 
-    return doubleDigits(hours) .. ":" .. doubleDigits(minutes) .. ":" .. doubleDigits(seconds);
+    return string.format("%02.0f",hours) .. ":" .. string.format("%02.0f",minutes) .. ":" .. string.format("%04.1f",seconds)
 end
 
 local function get_lat(s)
@@ -1110,20 +1103,29 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
       lcd.drawText( 80, 130, "No GPS Data on Map", DBLSIZE + RED)
     end
     
-    -- use aileron stick to roughtly select point
-    adjust = getValue('ail') / 1024
-    if math.abs(adjust) > 0.2 then
-      selected_point = math.floor(selected_point + adjust * 30)
+    -- use aileron stick to roughly select point
+    local adjust = getValue('ail') / 1024
+    if math.abs(adjust) > 0.1 then
+      selected_point = math.floor(selected_point + (adjust-0.1) / 0.9 * 60)
       if selected_point < 1 then selected_point = 1 end
       if selected_point > n_values then selected_point = n_values end
     end
 
-    -- use rudder stick to fine tune selected point
-    adjust = getValue('rud') / 1024
-    if math.abs(adjust) > 0.2 then
-      selected_point = math.floor(selected_point + adjust * 2)
+    -- use use scroll wheel to fine tune selected point
+    if event == EVT_ROT_LEFT then
+      selected_point = selected_point - 1
       if selected_point < 1 then selected_point = 1 end
       if selected_point > n_values then selected_point = n_values end
+    end
+    if event == EVT_ROT_RIGHT then
+      selected_point = selected_point + 1
+      if selected_point < 1 then selected_point = 1 end
+      if selected_point > n_values then selected_point = n_values end
+    end
+
+    -- press scroll wheel to toggle the help dialog box
+    if event == EVT_ROT_BREAK then
+      if show_help == true then show_help = false else show_help = true end
     end
 
     -- draw crosshairs on selected point
@@ -1134,7 +1136,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
     -- show telemetry of selected point
     lcd.drawFilledRectangle(0,LCD_H-80,105,80,BLACK)
-    lcd.drawText(0,LCD_H-80,"Time: " .. toDuration1(math.floor(current_session.total_seconds * (selected_point - 1) / current_session.total_lines)), WHITE + SMLSIZE)
+    lcd.drawText(0,LCD_H-80,"Time: " .. toDuration1(current_session.total_seconds * (selected_point - 1) / (current_session.total_lines - 1)), WHITE + SMLSIZE)
     lcd.drawText(0,LCD_H-60,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
     lcd.drawText(0,LCD_H-40,"lat" .. string.format(": %.4f", _values[2][selected_point]), WHITE + SMLSIZE)
     lcd.drawText(0,LCD_H-20,"long" .. string.format(": %.4f", _values[3][selected_point]), WHITE + SMLSIZE)
@@ -1153,6 +1155,16 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- draw scale labels
     lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
     lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
+
+    -- show help
+    if show_help == true then
+      local box_width = 220
+      lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,80,BLACK)
+      lcd.drawText(LCD_W-box_width+5,0,"press wheel: hide this dialog box", WHITE + SMLSIZE)
+      lcd.drawText(LCD_W-box_width+5,20,"scroll wheel: increment time", WHITE + SMLSIZE)
+      lcd.drawText(LCD_W-box_width+5,40,"aileron stick: increment time quickly", WHITE + SMLSIZE)
+      lcd.drawText(LCD_W-box_width+5,60,"press and hold return: exit", WHITE + SMLSIZE)
+    end
 
     return 0
 

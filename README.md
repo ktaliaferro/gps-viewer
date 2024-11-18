@@ -22,8 +22,6 @@ To open the app, press the system button on your transmitter and select the GPS 
 
 To move forward and backward between screens, use the next and previous page buttons on your transmitter.
 
-Once you get to the map screen, use the aileron stick to scroll forward and backward in time and inspect individual data points.  Use the rudder stick to fine tune your selection.
-
 To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
@@ -53,7 +51,7 @@ local maps = {
 
 ## Log File Requirements
 
-For the app to function, the logged flight data must have a "GPS" column with latitude and longitude separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
+For the app to function, the logged flight data must have a "GPS" column with latitude and longitude values separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
 
 Log files are ignored if they
 - are over 2 MB,
