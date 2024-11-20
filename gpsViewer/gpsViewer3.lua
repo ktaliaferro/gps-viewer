@@ -824,7 +824,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
             local i = obj.selected
             local var3 = map_names[i]
             log("Selected map: " .. var3)
-            selected_map = ii
+            selected_map = i
         end
     )
     
