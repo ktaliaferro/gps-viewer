@@ -26,7 +26,7 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-To use this app at your local airfield, add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
 
 ```lua
 local maps = {
@@ -45,7 +45,16 @@ local maps = {
       long_max = -97.5870073139149,
       lat_min = 30.315438505562526,
       lat_max = 30.330617687727617
-    }
+    },
+    {
+      -- plot flights at any location on a dark green background
+      name = "Blank",
+      image = nil,
+      long_min = nil,
+      long_max = nil,
+      lat_min = nil,
+      lat_max = nil
+    },
 }
 ```
 

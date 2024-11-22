@@ -160,7 +160,16 @@ local maps = {
       long_max = -97.5870073139149,
       lat_min = 30.315438505562526,
       lat_max = 30.330617687727617
-    }
+    },
+    {
+      -- plot flights at any location on a dark green background
+      name = "Blank",
+      image = nil,
+      long_min = nil,
+      long_max = nil,
+      lat_min = nil,
+      lat_max = nil
+    },
 }
 
 map_names = {}
@@ -184,9 +193,10 @@ local select_file_gui_init = false
 
 local selected_point = 1
 local telemetry_index = 1
-local show_help = true
+local show_ui = 0
 local map_drawn = false
 local map_draws = 0
+local n_values = 0
 
 ---- #########################################################################
 
@@ -1028,6 +1038,38 @@ local function drawMain()
     end
 end
 
+local function blank_map_boundary(points_long_min, points_long_max, points_lat_min, points_lat_max)
+  -- compute longitude and latitude boundary values of the blank map so that the flight
+  -- fills the screen and isn't distorted
+  
+  -- compute width and center of data points
+  local height = points_lat_max - points_lat_min
+  local width = points_long_max - points_long_min
+  local center_x = points_long_min + width / 2
+  local center_y = points_lat_min + height / 2
+  
+  -- add padding on each side
+  local padding = 0.1
+  width = width * (1 + padding)
+  height = height * (1 + padding)
+  
+  -- account for the fact that longitude lines get closer as you move away from the equator
+  local longitude_scaling_factor = math.sin((90-points_lat_max)*math.pi/180)
+  local desired_height_width_ratio = LCD_H * longitude_scaling_factor / LCD_W
+  
+  if height / width < desired_height_width_ratio then
+    height = width * desired_height_width_ratio
+  else
+    width = height / desired_height_width_ratio
+  end
+  map_long_min = center_x - width / 2 
+  map_long_max = center_x + width / 2
+  map_lat_min = center_y - height / 2 
+  map_lat_max = center_y + height / 2
+  
+  return map_long_min, map_long_max, map_lat_min, map_lat_max
+end
+
 local function state_SHOW_GRAPH_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
@@ -1035,18 +1077,30 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     end
     
     local c = nil
-    local n_values = #_values[3]
-    local n_points = 100
-    local step_size = math.floor(n_values / n_points)
+    if n_values == 0 then
+      n_values = #_values[3]
+    end
+    
+    local lat_index = 3
+    local long_index = 4
+    
     local long_min = maps[selected_map]["long_min"]
     local long_max = maps[selected_map]["long_max"]
     local lat_min = maps[selected_map]["lat_min"]
     local lat_max = maps[selected_map]["lat_max"]
+    if maps[selected_map]["name"] == "Blank" then
+      long_min, long_max, lat_min, lat_max = blank_map_boundary(
+        _points[long_index]["min"],
+        _points[long_index]["max"],
+        _points[lat_index]["min"],
+        _points[lat_index]["max"]
+      )
+    end
     local dx = long_max - long_min
     local dy = lat_max - lat_min
     
     local selected_point_old = selected_point
-    local show_help_old = show_help
+    local show_ui_old = show_ui
     local telemetry_index_old = telemetry_index
     
     -- use aileron stick to roughly select point
@@ -1069,21 +1123,25 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
       if selected_point > n_values then selected_point = n_values end
     end
 
-    -- press scroll wheel to toggle the help dialog box
+    -- press scroll wheel to toggle the user interface
     if event == EVT_ROT_BREAK then
-      if show_help == true then show_help = false else show_help = true end
+      show_ui = (show_ui + 1) % 3
     end
     
     -- press next page to toggle telemetry
     if event == EVT_VIRTUAL_NEXT_PAGE then
       if telemetry_index == 1 then telemetry_index = 2 else telemetry_index = 1 end
     end
+    
+    -- Redraw the map if there are any updates.
+    -- Limiting redraws makes the app more responsive to stick inputs.
+    if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index then
+      lcd.clear(DARKGREEN)
+      if maps[selected_map]["image"] ~= nil then
+        lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
+      end
       
-    if map_drawn == false or selected_point ~= selected_point_old or show_help_old ~= show_help or telemetry_index_old ~= telemetry_index then
-      -- Only redraw the map if needed.  Limiting map redraws ensures that the app is more responsive to stick inputs.
-      lcd.clear()
-      lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
-      
+      -- Draw map if there use selected a telemetry field.
       if sensorSelection[telemetry_index].idx ~= 1 then
         local x = 0
         local y = 0
@@ -1091,8 +1149,6 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         local x_old = 0
         local y_old = 0
         local z_old = 0
-        local lat_index = 3
-        local long_index = 4
         local tele_max = _points[telemetry_index]["max"]
         local tele_min = _points[telemetry_index]["min"]
         local dt = tele_max - tele_min
@@ -1101,20 +1157,26 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         local n_map_values = 0
 
         if styles[selected_style] ==  "Curve" then
-          -- draw graph using line segments
+          -- draw curve using line segments
           for i = 1, n_values, 1 do
             if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
               if n_gps_values > 0 then
+                -- save previous point for the beginning of the line segment
                 x_old = x
                 y_old = y
               end
+              -- compute new point for the end of the line segment
               x = (_values[long_index][i] - long_min) / dx * LCD_W
               y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
               z = (_values[telemetry_index][i] - tele_min) / dt * 255
-              if z < 0 then z = 0 end
-              if z > 255 then z = 255 end
-              c = lcd.RGB(250,z,z)
-              if n_gps_values > 0 and x >= 0 and x <= LCD_W and y >=0 and y <= LCD_H then
+              if n_gps_values > 0
+                and x >= 0 and x <= LCD_W
+                and y >= 0 and y <= LCD_H
+                and z >= 0 and z <= 255
+                and x_old >= 0 and x_old <= LCD_W
+                and y_old >= 0 and y_old <= LCD_H
+                then
+                c = lcd.RGB(250,z,z)
                 lcd.drawLine(x_old,y_old,x,y,SOLID,c)
                 n_map_values = n_map_values + 1
               end
@@ -1122,20 +1184,23 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             end
           end
         else
-          -- draw graph using rectangles     
+          -- draw points using rectangles     
           for i = 1, n_values, 1 do
             if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
-              n_gps_values = n_gps_values + 1
               x = (_values[long_index][i] - long_min) / dx * LCD_W
               y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
               z = (_values[telemetry_index][i] - tele_min) / dt * 255
               if z < 0 then z = 0 end
               if z > 255 then z = 255 end
-              c = lcd.RGB(255,z,z)
-              if x >= 0 and x <= LCD_W and y >=0 and y <= LCD_H then
+              if x >= 0 and x <= LCD_W
+                and y >= 0 and y <= LCD_H
+                and z >= 0 and z <= 255
+                then
+                c = lcd.RGB(255,z,z)
                 lcd.drawFilledRectangle(x,y,selected_point_size,selected_point_size,c)
                 n_map_values = n_map_values + 1
               end
+              n_gps_values = n_gps_values + 1
             end
           end
         end
@@ -1150,42 +1215,48 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         -- draw crosshairs on selected point
         x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
         y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
-        lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
-        lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
-
-        -- draw telemetry of selected point
-        lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
-        lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point - 1) / (current_session.total_lines - 1)), WHITE + SMLSIZE)
-        if sensorSelection[1].idx ~= 1 then
-          lcd.drawText(0,LCD_H-80,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
+        if x >= 0 and x <= LCD_W then
+          lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
         end
-        if sensorSelection[2].idx ~= 1 then
-          lcd.drawText(0,LCD_H-60,_points[2]["name"] .. string.format(": %.1f", _values[2][selected_point]), WHITE + SMLSIZE)
+        if y >= 0 and y <= LCD_H then
+          lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
         end
-        lcd.drawText(0,LCD_H-40,"lat" .. string.format(": %.4f", _values[lat_index][selected_point]), WHITE + SMLSIZE)
-        lcd.drawText(0,LCD_H-20,"long" .. string.format(": %.4f", _values[long_index][selected_point]), WHITE + SMLSIZE)
 
-        -- draw legend background
-        lcd.drawFilledRectangle(0,0,60,155,BLACK)
-        
-        -- draw field name
-        lcd.drawText(0,0,_points[telemetry_index]["name"], WHITE + SMLSIZE)
+        if show_ui == 0 or show_ui == 1 then
+          -- draw telemetry of selected point
+          lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
+          lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point - 1) / (n_values - 1)), WHITE + SMLSIZE)
+          if sensorSelection[1].idx ~= 1 then
+            lcd.drawText(0,LCD_H-80,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
+          end
+          if sensorSelection[2].idx ~= 1 then
+            lcd.drawText(0,LCD_H-60,_points[2]["name"] .. string.format(": %.1f", _values[2][selected_point]), WHITE + SMLSIZE)
+          end
+          lcd.drawText(0,LCD_H-40,"lat" .. string.format(": %.4f", _values[lat_index][selected_point]), WHITE + SMLSIZE)
+          lcd.drawText(0,LCD_H-20,"long" .. string.format(": %.4f", _values[long_index][selected_point]), WHITE + SMLSIZE)
 
-        -- draw scale
-        for i = 0, 25, 1 do
-          lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(255,255-i*10,255-i*10))
+          -- draw legend background
+          lcd.drawFilledRectangle(0,0,60,155,BLACK)
+          
+          -- draw field name
+          lcd.drawText(0,0,_points[telemetry_index]["name"], WHITE + SMLSIZE)
+
+          -- draw scale
+          for i = 0, 25, 1 do
+            lcd.drawFilledRectangle(5,20+i*5,5,5,lcd.RGB(255,255-i*10,255-i*10))
+          end
+          
+          -- draw scale labels
+          lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
+          lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
         end
-        
-        -- draw scale labels
-        lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
-        lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
       end
 
       -- draw help
-      if show_help == true then
+      if show_ui == 0 then
         local box_width = 220
         lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,100,BLACK)
-        lcd.drawText(LCD_W-box_width+5,0,"press wheel: hide this dialog box", WHITE + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,0,"press wheel: toggle user interface", WHITE + SMLSIZE)
         lcd.drawText(LCD_W-box_width+5,20,"next page: toggle telemetry field", WHITE + SMLSIZE)
         lcd.drawText(LCD_W-box_width+5,40,"scroll wheel: increment time", WHITE + SMLSIZE)
         lcd.drawText(LCD_W-box_width+5,60,"aileron stick: increment time quickly", WHITE + SMLSIZE)
