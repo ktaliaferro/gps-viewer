@@ -81,7 +81,10 @@ local function validate_files()
     m_tables = validate_script("lib_tables", nil, m_log, app_name)
     if error_desc ~= nil then return end
 
-    m_lib_file_parser = validate_script("lib_file_parser", nil, m_log, app_name, m_utils)
+    m_config = validate_script("lib_config", nil)
+    if error_desc ~= nil then return end
+
+    m_lib_file_parser = validate_script("lib_file_parser", nil, m_log, app_name, m_utils, m_config)
     if error_desc ~= nil then return end
 
     m_index_file = validate_script("lib_file_index", nil, m_log, app_name, m_utils, m_tables, m_lib_file_parser)
@@ -89,8 +92,8 @@ local function validate_files()
 
     m_libgui = validate_script("libgui", "1.0.3")
     if error_desc ~= nil then return end
-
-    m_main_app = validate_script("gpsViewer3", app_ver, m_log, m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui)
+    
+    m_main_app = validate_script("gpsViewer3", app_ver, m_log, m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui, m_config)
     if error_desc ~= nil then return end
 
 end

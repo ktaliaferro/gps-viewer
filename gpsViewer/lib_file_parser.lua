@@ -1,9 +1,11 @@
-local m_log, app_name, m_utils = ...
+local m_log, app_name, m_utils, m_config = ...
 
 local M = {}
 M.m_log = m_log
 M.app_name = app_name
 M.m_utils = m_utils
+
+local max_log_size_mb = m_config.max_log_size_mb
 
 --function cache
 local math_floor = math.floor
@@ -57,8 +59,7 @@ function M.getFileDataInfo(fileName)
     local columns_with_data = {}
     
     -- check file size
-    local max_size_mb = 2
-    io.seek(hFile, max_size_mb * 1024 * 1024)
+    io.seek(hFile, max_log_size_mb * 1024 * 1024)
     s = io.read(hFile, 2)
     io.seek(hFile,0)
     if string.len(s) > 0 then
@@ -98,7 +99,7 @@ function M.getFileDataInfo(fileName)
 
     -- as a backstop, stop after 2x max file size above
     local sample_col_data = nil
-    for i = 1, max_size_mb * 1024 do
+    for i = 1, max_log_size_mb * 1024 do
         --M.m_log.info("profiler: start")
         --local t1 =getTime()
         local data2 = io.read(hFile, 2048)

@@ -26,10 +26,10 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of gpsViewer3.lua accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of `lib_config.lua` accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
 
 ```lua
-local maps = {
+M.maps = {
     {
       name = "ARCA small",
       image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
@@ -62,7 +62,14 @@ local maps = {
 
 For the app to function, the logged flight data must have a "GPS" column with latitude and longitude values separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
 
-Log files are ignored if they
+To exclude test fights and keep load times reasonable, log files are ignored if they
 - are over 2 MB,
 - have less then 60 seconds of data,
 - or don't have a GPS column.
+
+These limits can be customized by editing the following part of `lib_config.lua`.
+
+```lua
+M.max_log_size_mb = 2
+M.min_log_length_sec = 60
+```

@@ -1,4 +1,4 @@
-local m_log,m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui  = ...
+local m_log,m_utils,m_tables,m_lib_file_parser,m_index_file,m_libgui, m_config  = ...
 
 local M = {}
 
@@ -26,6 +26,8 @@ function M.getVer()
     return app_ver
 end
 
+local maps = m_config.maps
+
 --function cache
 local math_floor = math.floor
 local math_fmod = math.fmod
@@ -38,7 +40,8 @@ local string_byte = string.byte
 
 local heap = 2048
 local hFile
-local min_log_sec_to_show = 60
+local min_log_length_sec = m_config.min_log_length_sec
+local max_log_size_mb = m_config.max_log_size_mb
 
 -- read_and_index_file_list()
 local log_file_list_raw = {}
@@ -143,34 +146,6 @@ local graphMinMaxEditorIndex = 0
 --local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg1.png")
 --local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg2.png")
 --local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg3.png")
-
-local maps = {
-    {
-      name = "ARCA small",
-      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
-      long_min = -97.6074597097314,
-      long_max = -97.59857623367657,
-      lat_min = 30.322538058896907,
-      lat_max = 30.326649900592205
-    },
-    {
-      name = "ARCA large",
-      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
-      long_min = -97.61791942201334,
-      long_max = -97.5870073139149,
-      lat_min = 30.315438505562526,
-      lat_max = 30.330617687727617
-    },
-    {
-      -- plot flights at any location on a dark green background
-      name = "Blank",
-      image = nil,
-      long_min = nil,
-      long_max = nil,
-      lat_min = nil,
-      lat_max = nil
-    },
-}
 
 map_names = {}
 for i=1, #maps, 1 do
@@ -512,7 +487,7 @@ local function filter_log_file_list(filter_model_name, filter_date, need_update)
         end
 
         local is_duration_ok = true
-        if log_file_info.total_seconds < min_log_sec_to_show then
+        if log_file_info.total_seconds < min_log_length_sec then
             is_duration_ok = false
         end
 
@@ -1032,7 +1007,7 @@ local function drawMain()
     --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
     if filename == "not found" then
-        lcd.drawText(30, 1, string.format("Invalid log file (Likely over 2 MB, under %d sec, or lacking GPS column)", min_log_sec_to_show), WHITE + SMLSIZE)
+        lcd.drawText(30, 1, string.format("Invalid log file (Likely over %d MB, under %d sec, or lacking GPS column)", max_log_size_mb, min_log_length_sec), WHITE + SMLSIZE)
     elseif filename ~= nil then
         lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
     end
