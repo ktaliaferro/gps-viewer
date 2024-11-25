@@ -63,9 +63,9 @@ function M.getFileDataInfo(fileName)
     s = io.read(hFile, 2)
     io.seek(hFile,0)
     if string.len(s) > 0 then
-      M.m_log.info("error: file too long, %s", fileName)
-      io.close(hFile)
-      return nil, nil, nil, nil, nil, nil, nil
+        M.m_log.info("error: file too long, %s", fileName)
+        io.close(hFile)
+        return nil, nil, nil, nil, nil, nil, nil
     end
 
     -- read Header
@@ -85,13 +85,13 @@ function M.getFileDataInfo(fileName)
     columns_by_header = M.m_utils.split(headerLine)
     
     if contains(columns_by_header,"GPS") then
-      local i = #columns_by_header
-      columns_by_header[i+1]="longitude"
-      columns_by_header[i+2]="latitude"
+        local i = #columns_by_header
+        columns_by_header[i+1]="longitude"
+        columns_by_header[i+2]="latitude"
     else
-      M.m_log.info("error: no GPS column, %s", fileName)
-      io.close(hFile)
-      return nil, nil, nil, nil, nil, nil, nil
+        M.m_log.info("error: no GPS column, %s", fileName)
+        io.close(hFile)
+        return nil, nil, nil, nil, nil, nil, nil
     end
 
     start_index = index
