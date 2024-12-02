@@ -113,20 +113,6 @@ local sensorSelection = {
     { y = 155, label = "Field 4", values = {}, idx = 1, colId = 0, min = 0 }
 }
 
-local graphConfig = {
-    x_start = 0,
-    x_end = LCD_W,
-    y_start = 40,
-    y_end = 240,
-    DEFAULT_CENTER_Y = 120,
-    { color = GREEN, valx = 20, valy = 249, minx = 5, miny = 220, maxx = 5, maxy = 30 },
-    { color = RED, valx = 130, valy = 249, minx = 5, miny = 205, maxx = 5, maxy = 45 },
-    { color = WHITE, valx = 250, valy = 249, minx = 5, miny = 190, maxx = 5, maxy = 60 },
-    { color = BLUE, valx = 370, valy = 249, minx = 5, miny = 175, maxx = 5, maxy = 75 }
-}
-
-local xStep = (graphConfig.x_end - graphConfig.x_start) / 100
-
 local cursor = 0
 
 local gui_drawn = false
@@ -384,8 +370,8 @@ local function read_and_index_file_list()
  
     while true do
         if gui_drawn == false then
-            -- Separate out the drawing of the GUI into a separate execution of the run function.
-            -- Otherwise, it the GUI will be blank while the first file is indexing.
+            -- Draw the GUI into a separate execution of the run function.
+            -- Otherwise, the GUI will be blank while the first file is indexing.
             local filename = log_file_list_raw[log_file_list_raw_idx]
             if filename ~= nil then
                 -- draw top-bar
@@ -424,7 +410,7 @@ local function read_and_index_file_list()
             end
             log_file_list_raw_idx = log_file_list_raw_idx + 1
             gui_drawn = false
-            if log_file_list_raw_idx >= #log_file_list_raw then
+            if log_file_list_raw_idx > #log_file_list_raw then
                 return true
             end
         end
@@ -1059,10 +1045,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local lat_index = 3
     local long_index = 4
     
-    local long_min = maps[selected_map]["long_min"]
-    local long_max = maps[selected_map]["long_max"]
-    local lat_min = maps[selected_map]["lat_min"]
-    local lat_max = maps[selected_map]["lat_max"]
+    local long_min, long_max, lat_min, lat_max
     if maps[selected_map]["name"] == "Blank" then
         long_min, long_max, lat_min, lat_max = blank_map_boundary(
             _points[long_index]["min"],
@@ -1070,6 +1053,11 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             _points[lat_index]["min"],
             _points[lat_index]["max"]
         )
+    else
+        long_min = maps[selected_map]["long_min"]
+        long_max = maps[selected_map]["long_max"]
+        lat_min = maps[selected_map]["lat_min"]
+        lat_max = maps[selected_map]["lat_max"]
     end
     local dx = long_max - long_min
     local dy = lat_max - lat_min
@@ -1078,7 +1066,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local show_ui_old = show_ui
     local telemetry_index_old = telemetry_index
 
-    -- use use scroll wheel increment time
+    -- use scroll wheel to increment time
     if event == EVT_ROT_LEFT then
         selected_point = selected_point - 1
         if selected_point < 1 then selected_point = 1 end
@@ -1113,7 +1101,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index then
         lcd.clear(DARKGREEN)
         if maps[selected_map]["image"] ~= nil then
-        lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
+            lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
         end
           
         -- Draw map if the user selected a telemetry field.

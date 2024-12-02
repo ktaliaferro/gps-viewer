@@ -60,10 +60,10 @@ function M.getFileDataInfo(fileName)
     
     -- check file size
     io.seek(hFile, max_log_size_mb * 1024 * 1024)
-    s = io.read(hFile, 2)
+    local s = io.read(hFile, 2)
     io.seek(hFile,0)
     if string.len(s) > 0 then
-        M.m_log.info("error: file too long, %s", fileName)
+        M.m_log.info("File too large, file: %s", fileName)
         io.close(hFile)
         return nil, nil, nil, nil, nil, nil, nil
     end
@@ -89,7 +89,7 @@ function M.getFileDataInfo(fileName)
         columns_by_header[i+1]="longitude"
         columns_by_header[i+2]="latitude"
     else
-        M.m_log.info("error: no GPS column, %s", fileName)
+        M.m_log.info("No GPS column, file: %s", fileName)
         io.close(hFile)
         return nil, nil, nil, nil, nil, nil, nil
     end
@@ -195,7 +195,7 @@ function M.getFileDataInfo(fileName)
 
     io.close(hFile)
 
-    M.m_log.info("error: backstop: file too long, %s", fileName)
+    M.m_log.info("File too large, file: %s", fileName)
     return nil, nil, nil, nil, nil, nil, nil
 end
 
