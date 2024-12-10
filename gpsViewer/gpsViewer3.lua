@@ -812,7 +812,9 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
     sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
     sensorSelection[3].colId = get_key(columns_by_header, "latitude")
+    sensorSelection[3].idx = FIRST_VALID_COL
     sensorSelection[4].colId = get_key(columns_by_header, "longitude")
+    sensorSelection[4].idx = FIRST_VALID_COL
 
     state = STATE.SELECT_SENSORS
     return 0

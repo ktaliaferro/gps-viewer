@@ -28,12 +28,12 @@ function M.getTotalSeconds(time)
 end
 
 function contains(table, element)
-  for _, value in pairs(table) do
-    if value == element then
-      return true
+    for _, value in pairs(table) do
+        if value == element then
+            return true
+        end
     end
-  end
-  return false
+    return false
 end
 
 function M.getFileDataInfo(fileName)
@@ -78,7 +78,7 @@ function M.getFileDataInfo(fileName)
     end
 
     -- get header line
-    local headerLine = string.sub(data1, 1, index)
+    local headerLine = string.sub(data1, 1, index - 1)
     --M.m_log.info("header-line: [%s]", headerLine)
 
     -- get columns
