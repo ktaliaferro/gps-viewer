@@ -152,7 +152,7 @@ local ctx2 = m_libgui.newGUI()
 local ctx3 = m_libgui.newGUI()
 local select_file_gui_init = false
 
-local selected_point = 1
+local selected_point = 0
 local telemetry_index = 1
 local show_ui = 0
 local map_drawn = false
@@ -993,7 +993,7 @@ local function drawMain()
     --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
     if filename == "not found" then
-        lcd.drawText(30, 1, string.format("Invalid log file (Likely over %d MB, under %d sec, or lacking GPS column)", max_log_size_mb, min_log_length_sec), WHITE + SMLSIZE)
+        lcd.drawText(30, 1, string.format("Invalid log file (over %d MB, under %d sec, or missing GPS data)", max_log_size_mb, min_log_length_sec), WHITE + SMLSIZE)
     elseif filename ~= nil then
         lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
     end
@@ -1069,12 +1069,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- use scroll wheel to increment time
     if event == EVT_ROT_LEFT then
         selected_point = selected_point - 1
-        if selected_point < 1 then selected_point = 1 end
+        if selected_point < 0 then selected_point = 0 end
         if selected_point > n_values then selected_point = n_values end
     end
     if event == EVT_ROT_RIGHT then
         selected_point = selected_point + 1
-        if selected_point < 1 then selected_point = 1 end
+        if selected_point < 0 then selected_point = 0 end
         if selected_point > n_values then selected_point = n_values end
     end
     
@@ -1082,7 +1082,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local adjust = getValue('ail') / 1024
     if math.abs(adjust) > 0.1 then
         selected_point = math.floor(selected_point + (adjust-0.1) / 0.9 * 60)
-        if selected_point < 1 then selected_point = 1 end
+        if selected_point < 0 then selected_point = 0 end
         if selected_point > n_values then selected_point = n_values end
     end
 
@@ -1093,7 +1093,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     
     -- press next page to toggle telemetry
     if event == EVT_VIRTUAL_NEXT_PAGE then
-        if telemetry_index == 1 then telemetry_index = 2 else telemetry_index = 1 end
+        telemetry_index = (telemetry_index % 2) + 1
     end
     
     -- Redraw the map if there are any updates.
@@ -1147,7 +1147,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 end
             elseif styles[selected_style] ==  "Points" then
                 -- draw points using rectangles 
-                for i = 1, n_values, 1 do
+                for i = 0, n_values, 1 do
                     if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
                         x = (_values[long_index][i] - long_min) / dx * LCD_W
                         y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
@@ -1192,7 +1192,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             if show_ui == 0 or show_ui == 1 then
                 -- draw telemetry of selected point
                 lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
-                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point - 1) / (n_values - 1)), WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point) / (n_values)), WHITE + SMLSIZE)
                 if sensorSelection[1].idx ~= 1 then
                     lcd.drawText(0,LCD_H-80,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
                 end

@@ -1,16 +1,19 @@
 local M = {}
 
+-- ignore large log files to keep load times reasonable
 M.max_log_size_mb = 2
+
+-- ignore short log files to exclude ground tests
 M.min_log_length_sec = 60
 
 M.maps = {
     {
       name = "ARCA small",
       image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
-      long_min = -97.6074597097314,
-      long_max = -97.59857623367657,
-      lat_min = 30.322538058896907,
-      lat_max = 30.326649900592205
+      long_min = -97.6074,
+      long_max = -97.5984,
+      lat_min = 30.3223,
+      lat_max = 30.3267
     },
     {
       name = "ARCA large",
