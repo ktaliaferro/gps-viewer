@@ -153,11 +153,15 @@ local ctx3 = m_libgui.newGUI()
 local select_file_gui_init = false
 
 local selected_point = 0
+local start_proportion = 0
+local end_proportion = 1
 local telemetry_index = 1
 local show_ui = 0
 local map_drawn = false
 local map_draws = 0
 local n_values = 0
+local start_point = 0
+local end_point = 0
 
 ---- #########################################################################
 
@@ -370,7 +374,7 @@ local function read_and_index_file_list()
  
     while true do
         if gui_drawn == false then
-            -- Draw the GUI into a separate execution of the run function.
+            -- Draw the GUI in a separate execution of the run function.
             -- Otherwise, the GUI will be blank while the first file is indexing.
             local filename = log_file_list_raw[log_file_list_raw_idx]
             if filename ~= nil then
@@ -1067,25 +1071,76 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local selected_point_old = selected_point
     local show_ui_old = show_ui
     local telemetry_index_old = telemetry_index
+    local start_point_old = start_point
+    local end_point_old = end_point
+
+    local adjust_raw
+    local adjust
+    local deadzone = 0.05
+
+    -- use elevator stick to zoom
+    adjust_raw = getValue('ele') / 1024
+    if math.abs(adjust_raw) > deadzone then
+        adjust = adjust_raw * .1
+        if adjust < -1 * (end_proportion - start_proportion) / 2 then adjust = 0 end
+        end_proportion = end_proportion + adjust 
+        start_proportion = start_proportion - adjust
+        if start_proportion < 0 then start_proportion = 0 end
+        if end_proportion > 1 then end_proportion = 1 end
+    end
+
+    -- use aileron stick pan
+    adjust_raw = getValue('ail') / 1024
+    if math.abs(adjust_raw) > deadzone then
+        adjust = adjust_raw * .1
+        if adjust > (1 - end_proportion) then adjust = 1 - end_proportion end
+        if adjust < -1 * start_proportion then adjust = -1 * start_proportion end
+        end_proportion = end_proportion + adjust 
+        start_proportion = start_proportion + adjust
+    end
+    
+    -- apply zoom and pan to compute start and end points
+    start_point = math.floor(start_proportion * n_values)
+    end_point = math.floor(end_proportion * n_values)
+    if start_point < 0 then start_point = 0 end
+    if end_point > n_values then end_point = n_values end
 
     -- use scroll wheel to increment time
     if event == EVT_ROT_LEFT then
         selected_point = selected_point - 1
-        if selected_point < 0 then selected_point = 0 end
-        if selected_point > n_values then selected_point = n_values end
     end
     if event == EVT_ROT_RIGHT then
         selected_point = selected_point + 1
-        if selected_point < 0 then selected_point = 0 end
-        if selected_point > n_values then selected_point = n_values end
     end
     
-    -- use aileron stick to increment time quickly
-    local adjust = getValue('ail') / 1024
-    if math.abs(adjust) > 0.1 then
-        selected_point = math.floor(selected_point + (adjust-0.1) / 0.9 * 60)
+    -- use rudder stick to increment time quickly
+    adjust_raw = getValue('rud') / 1024
+    if math.abs(adjust_raw) > deadzone then
+        adjust = adjust_raw * 60
+        selected_point = math.floor(selected_point + adjust)
+    end
+    
+    
+    if selected_point ~= selected_point_old then
+        -- if selected point is out of bounds, then pan accordingly
         if selected_point < 0 then selected_point = 0 end
         if selected_point > n_values then selected_point = n_values end
+        if selected_point < start_point then
+            local shift = start_point - selected_point
+            end_point = end_point - shift
+            start_point = start_point - shift
+        end
+        if selected_point > end_point then
+            local shift = selected_point - end_point
+            start_point = start_point + shift
+            end_point = end_point + shift
+        end
+        start_proportion = start_point / n_values
+        end_proportion = end_point / n_values
+    else
+        -- if selected point is out of bounds, then scroll accordingly
+        if selected_point < start_point then selected_point = start_point end
+        if selected_point > end_point then selected_point = end_point end
     end
 
     -- press scroll wheel to toggle the user interface
@@ -1100,7 +1155,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     
     -- Redraw the map if there are any updates.
     -- Limiting redraws makes the app more responsive to stick inputs.
-    if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index then
+    if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old then
         lcd.clear(DARKGREEN)
         if maps[selected_map]["image"] ~= nil then
             lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
@@ -1122,7 +1177,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
             if styles[selected_style] ==  "Curve" then
                 -- draw curve using line segments
-                for i = 1, n_values, 1 do
+                for i = start_point, end_point, 1 do
                     if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
                         if n_gps_values > 0 then
                             -- save previous point for the beginning of the line segment
@@ -1149,7 +1204,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 end
             elseif styles[selected_style] ==  "Points" then
                 -- draw points using rectangles 
-                for i = 0, n_values, 1 do
+                for i = start_point, end_point, 1 do
                     if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
                         x = (_values[long_index][i] - long_min) / dx * LCD_W
                         y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
@@ -1218,18 +1273,31 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 -- draw scale labels
                 lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
                 lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
+                
+                -- draw timeline
+                lcd.drawFilledRectangle(LCD_W-110,LCD_H-30,110,30,BLACK)
+                lcd.drawText(LCD_W-110+30,LCD_H-30,"Timeline", WHITE + SMLSIZE)
+                lcd.drawFilledRectangle(LCD_W-105,LCD_H-8,1,6,WHITE)
+                lcd.drawFilledRectangle(LCD_W-6,LCD_H-8,1,6,WHITE)
+                local selected_proportion = selected_point / n_values
+                lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,WHITE)
+                local timeline_width = 100 * (end_proportion - start_proportion)
+                local timeline_start = LCD_W - 105 + start_proportion * 100
+                lcd.drawFilledRectangle(timeline_start,LCD_H-6,timeline_width,2,WHITE)
             end
         end
 
         -- draw help
         if show_ui == 0 then
             local box_width = 220
-            lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,100,BLACK)
-            lcd.drawText(LCD_W-box_width+5,0,"press wheel: toggle user interface", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,20,"scroll wheel: increment time", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,40,"aileron stick: increment time quickly", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,60,"next page: toggle telemetry field", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,80,"press and hold return: exit", WHITE + SMLSIZE)
+            lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,140,BLACK)
+            lcd.drawText(LCD_W-box_width+5,0,"elevator: zoom timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,20,"aileron: pan timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,40,"rudder: scroll timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,60,"scroll wheel: scroll slowly", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,80,"press wheel: toggle user interface", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,100,"next page: toggle telemetry field", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,120,"press and hold return: exit", WHITE + SMLSIZE)
         end
         map_drawn = true
         map_draws = map_draws + 1
