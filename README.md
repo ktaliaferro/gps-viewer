@@ -12,9 +12,9 @@ GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/ed
 
 ## Installation
 
-Copy `gpsViewer.lua` and the `gpsViewer` directory to the `/SCRIPTS/TOOLS` directory on your transmitter.
+Copy the `/SCRIPTS` directory to your transmitter.
 
-Optionally copy the sample log file `SampleLog-2024-10-10-113001.csv` to the `/LOGS` directory on your transmitter.
+Optionally copy the `/LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
 
 ## Use
 
@@ -26,25 +26,25 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of `lib_config.lua` accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
 
 ```lua
 M.maps = {
     {
       name = "ARCA small",
       image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
-      long_min = -97.6074597097314,
-      long_max = -97.59857623367657,
-      lat_min = 30.322538058896907,
-      lat_max = 30.326649900592205
+      long_min = -97.6074,
+      long_max = -97.5984,
+      lat_min = 30.3223,
+      lat_max = 30.3267
     },
     {
       name = "ARCA large",
       image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
-      long_min = -97.61791942201334,
-      long_max = -97.5870073139149,
-      lat_min = 30.315438505562526,
-      lat_max = 30.330617687727617
+      long_min = -97.6179,
+      long_max = -97.5870,
+      lat_min = 30.3154,
+      lat_max = 30.3306
     },
     {
       -- plot flights at any location on a dark green background
@@ -60,16 +60,11 @@ M.maps = {
 
 ## Log File Requirements
 
-For the app to function, the logged flight data must have a "GPS" column with latitude and longitude values separated by a space.  e.g. "30.324000 -97.603500".  See the sample log file `SampleLog-2024-10-10-113001.csv`.
+For the app to function, the logged flight data must have a "GPS" column with latitude and longitude values separated by a space.  See the sample log file [SampleLog-2024-10-10-113001.csv](LOGS/SampleLog-2024-10-10-113001.csv).
 
 To exclude test fights and keep load times reasonable, log files are ignored if they
 - are over 2 MB,
 - have less then 60 seconds of data,
 - or don't have a GPS column.
 
-These limits can be customized by editing the following part of `lib_config.lua`.
-
-```lua
-M.max_log_size_mb = 2
-M.min_log_length_sec = 60
-```
+These limits can be customized by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua).

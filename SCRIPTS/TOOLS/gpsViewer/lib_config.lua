@@ -18,10 +18,10 @@ M.maps = {
     {
       name = "ARCA large",
       image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
-      long_min = -97.61791942201334,
-      long_max = -97.5870073139149,
-      lat_min = 30.315438505562526,
-      lat_max = 30.330617687727617
+      long_min = -97.6179,
+      long_max = -97.5870,
+      lat_min = 30.3154,
+      lat_max = 30.3306
     },
     {
       -- plot flights at any location on a dark green background

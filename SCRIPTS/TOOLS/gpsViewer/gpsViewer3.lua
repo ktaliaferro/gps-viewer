@@ -1236,13 +1236,15 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
             if show_ui == 0 or show_ui == 1 or show_ui == 2 then
                 -- draw crosshairs on selected point
-                x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
-                y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
-                if x >= 0 and x <= LCD_W then
-                    lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
-                end
-                if y >= 0 and y <= LCD_H then
-                    lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
+                if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
+                    x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
+                    y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
+                    if x >= 0 and x <= LCD_W then
+                        lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
+                    end
+                    if y >= 0 and y <= LCD_H then
+                        lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
+                    end
                 end
             end
 
@@ -1250,14 +1252,24 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 -- draw telemetry of selected point
                 lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
                 lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point) / (n_values)), WHITE + SMLSIZE)
-                if sensorSelection[1].idx ~= 1 then
-                    lcd.drawText(0,LCD_H-80,_points[1]["name"] .. string.format(": %.1f", _values[1][selected_point]), WHITE + SMLSIZE)
+                for i = 1,2,1 do
+                    if sensorSelection[i].idx ~= 1 then
+                        local telemetry_string = ":"
+                        if _values[i][selected_point] ~= nil then
+                            telemetry_string = string.format(": %.1f", _values[i][selected_point])
+                        end
+                        local offset = 20 * (i - 1)
+                        lcd.drawText(0,LCD_H-80+offset,_points[i]["name"] .. telemetry_string, WHITE + SMLSIZE)
+                    end
                 end
-                if sensorSelection[2].idx ~= 1 then
-                    lcd.drawText(0,LCD_H-60,_points[2]["name"] .. string.format(": %.1f", _values[2][selected_point]), WHITE + SMLSIZE)
+                local lat_string = " "
+                local long_string = " "
+                if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
+                    lat_string = string.format(" %.4f", _values[lat_index][selected_point])
+                    long_string = string.format(" %.4f", _values[long_index][selected_point])
                 end
-                lcd.drawText(0,LCD_H-40,"lat" .. string.format(": %.4f", _values[lat_index][selected_point]), WHITE + SMLSIZE)
-                lcd.drawText(0,LCD_H-20,"long" .. string.format(": %.4f", _values[long_index][selected_point]), WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-40,"lat:" .. lat_string, WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-20,"long:" .. long_string, WHITE + SMLSIZE)
 
                 -- draw legend background
                 lcd.drawFilledRectangle(0,0,60,155,BLACK)
