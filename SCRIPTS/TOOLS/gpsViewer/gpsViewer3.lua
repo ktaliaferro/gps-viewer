@@ -385,12 +385,12 @@ local function read_and_index_file_list()
                 --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
                 -- draw state
-                lcd.drawText(5, 30, "Analyzing & indexing files", TEXT_COLOR + BOLD)
+                lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
                 lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
                 lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
                 lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
 
-                drawProgress(160, 60, log_file_list_raw_idx, #log_file_list_raw)
+                drawProgress(160, 60, log_file_list_raw_idx - 0.5, #log_file_list_raw)
 
                 log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
             end
@@ -1209,8 +1209,6 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                         x = (_values[long_index][i] - long_min) / dx * LCD_W
                         y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
                         z = (_values[telemetry_index][i] - tele_min) / dt * 255
-                        if z < 0 then z = 0 end
-                        if z > 255 then z = 255 end
                         if x >= 0 and x <= LCD_W
                             and y >= 0 and y <= LCD_H
                             and z >= 0 and z <= 255
@@ -1265,8 +1263,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 local lat_string = " "
                 local long_string = " "
                 if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
-                    lat_string = string.format(" %.4f", _values[lat_index][selected_point])
-                    long_string = string.format(" %.4f", _values[long_index][selected_point])
+                    lat_string = string.format(" %.6f", _values[lat_index][selected_point])
+                    long_string = string.format(" %.6f", _values[long_index][selected_point])
                 end
                 lcd.drawText(0,LCD_H-40,"lat:" .. lat_string, WHITE + SMLSIZE)
                 lcd.drawText(0,LCD_H-20,"long:" .. long_string, WHITE + SMLSIZE)
@@ -1303,9 +1301,9 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         if show_ui == 0 then
             local box_width = 220
             lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,140,BLACK)
-            lcd.drawText(LCD_W-box_width+5,0,"elevator: zoom timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,20,"aileron: pan timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,40,"rudder: scroll timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,0,"elevator stick: zoom timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,20,"aileron stick: pan timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,40,"rudder stick: scroll timeline", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,60,"scroll wheel: scroll slowly", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,80,"press wheel: toggle user interface", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,100,"next page: toggle telemetry field", WHITE + SMLSIZE)

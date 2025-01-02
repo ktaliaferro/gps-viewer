@@ -153,41 +153,41 @@ function M.getFileDataInfo(fileName)
             end_time = time
             local vals = M.m_utils.split(line) -- hot
 
-            -- find columns with data
             if sample_col_data == nil then
                 sample_col_data = vals
                 for idxCol = 1, #columns_by_header, 1 do
+                    -- initialize to false
                     columns_is_have_data[idxCol] = false
                 end
             end
 
-            --M.m_utils.timeProfilerAdd('in-line3');
-            for idxCol = 1, #columns_by_header, 1 do -- hot (whole loop)
-                local curr_col = columns_by_header[idxCol]
-
-                local have_data = vals[idxCol] ~= sample_col_data[idxCol]
-                if have_data == true then
-                    -- always ignore
-                    if curr_col == "LSW"       then have_data = false end
-                    if curr_col == "GPS"       then have_data = false end
-                    if curr_col == "latitude"  then have_data = false end
-                    if curr_col == "longitude" then have_data = false end
-                else
-                    -- always show
-                    if curr_col == "RQly(%)"   then have_data = true end
-                    if curr_col == "TQly(%)"   then have_data = true end
-                    if curr_col == "TPWR(mW)"  then have_data = true end
-                    if curr_col == "RSNR(dB)"  then have_data = true end
-                    if curr_col == "VFR(%)"    then have_data = true end
-                    if curr_col == "TQly"      then have_data = true end
-                end
-
-                if have_data then
+            -- if the data in the current row is different from the data in the first row, then
+            -- the column has variable data and will be selectable by the user for plotting
+            for idxCol = 1, #columns_by_header, 1 do
+                if columns_is_have_data[idxCol] == false
+                    and (vals[idxCol] ~= sample_col_data[idxCol])
+                    and (tonumber(vals[idxCol]) ~= nil) then
                     columns_is_have_data[idxCol] = true
                 end
             end
 
             idx_buff = idx_buff + string.len(line) + 1 -- dont forget the newline
+        end
+
+        for idxCol = 1, #columns_by_header, 1 do
+            local curr_col = columns_by_header[idxCol]
+
+            -- always hide these columns
+            local cols_to_hide = {'LSW', 'GPS', 'latitude', 'longitude'}
+            for _,col in pairs(cols_to_hide) do
+                if string.find(curr_col,"^" .. col) ~= nil then columns_is_have_data[idxCol] = false end
+            end
+
+            -- always show these columns
+            local cols_to_show = {'RQly', 'TQly', 'TPWR', 'RSNR', 'VFR'}
+            for _,col in pairs(cols_to_show) do
+                if curr_col == col then columns_is_have_data[idxCol] = true end
+            end
         end
 
         buffer = string.sub(buffer, idx_buff + 1) -- dont forget the newline

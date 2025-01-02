@@ -12,9 +12,9 @@ GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/ed
 
 ## Installation
 
-Copy the `/SCRIPTS` directory to your transmitter.
+Copy the `SCRIPTS` directory to your transmitter.
 
-Optionally copy the `/LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
+Optionally copy the `LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
 
 ## Use
 
@@ -26,7 +26,7 @@ To exit the app, press and hold the return button on your transmitter.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the gpsViewer folder and update the following part of [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update the following part of [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) accordingly.  You'll need to specify the maximum and minimum longitude and latitude coordinates of your image.
 
 ```lua
 M.maps = {
