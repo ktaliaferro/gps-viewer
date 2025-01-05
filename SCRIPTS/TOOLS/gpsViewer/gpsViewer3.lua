@@ -1237,11 +1237,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
                     x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
                     y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
+                    local crosshair_color = GREEN
                     if x >= 0 and x <= LCD_W then
-                        lcd.drawLine(x,0,x,LCD_H,SOLID,WHITE)
+                        lcd.drawLine(x,0,x,LCD_H,SOLID,crosshair_color)
                     end
                     if y >= 0 and y <= LCD_H then
-                        lcd.drawLine(0,y,LCD_W,y,SOLID,WHITE)
+                        lcd.drawLine(0,y,LCD_W,y,SOLID,crosshair_color)
                     end
                 end
             end
@@ -1303,8 +1304,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,140,BLACK)
             lcd.drawText(LCD_W-box_width+5,0,"elevator stick: zoom timeline", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,20,"aileron stick: pan timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,40,"rudder stick: scroll timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,60,"scroll wheel: scroll slowly", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,40,"rudder stick: move crosshair", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,60,"scroll wheel: fine tune crosshair", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,80,"press wheel: toggle user interface", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,100,"next page: toggle telemetry field", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,120,"press and hold return: exit", WHITE + SMLSIZE)

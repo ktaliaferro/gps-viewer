@@ -8,7 +8,8 @@ It's also useful for assessing flight path consistency over multiple laps and ve
 
 ![screenshot](images/screenshot_curve.png)
 
-GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer), which is for plotting telemetry with respect to time.
+GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer
+) by Offer Shmuely, which is for plotting telemetry with respect to time.
 
 ## Installation
 
@@ -20,9 +21,31 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 To open the app, press the system button on your transmitter and select the GPS Viewer app.
 
-To move forward and backward between screens, use the next and previous page buttons on your transmitter.
+1. Select log files to index.  This step measures the duration of each log file and determines which fields have data
+ that changes over time.
 
-To exit the app, press and hold the return button on your transmitter.
+    ![screenshot](images/step_01.png)
+
+2. Select a log file from the index.
+
+    ![screenshot](images/step_02.png)
+
+3. Select fields to plot, a map to plot on, and the plot style.  Fields with data that doesn't change over time are excluded.
+
+    ![screenshot](images/step_03.png)
+
+4. View the plot.  You can use the control sticks to select a subinterval of the timeline to plot and inspect individual data points.
+
+    - elevator stick: zoom timeline
+    - aileron stick: pan timeline
+    - rudder stick: move crosshair
+    - scroll wheel: fine tune crosshair
+    - scroll button: toggle user interface
+    - next page button: toggle telemetry field
+
+    ![screenshot](images/step_04.png)
+
+To exit the app, press and hold the return button.
 
 ## Satellite Image
 
