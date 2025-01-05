@@ -19,7 +19,7 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 ## Use
 
-To open the app, press the system button on your transmitter and select the GPS Viewer app.
+To open the app, press the system button on your transmitter and select GPS Viewer.
 
 1. Select log files to index.  This step measures the duration of each log file and determines which fields have data
  that changes over time.
@@ -83,11 +83,11 @@ M.maps = {
 
 ## Log File Requirements
 
-For the app to function, the logged flight data must have a "GPS" column with latitude and longitude values separated by a space.  See the sample log file [SampleLog-2024-10-10-113001.csv](LOGS/SampleLog-2024-10-10-113001.csv).
+For the app to function, the logged flight data must have a "GPS" field with latitude and longitude values separated by a space.  See the sample log file [SampleLog-2024-10-10-113001.csv](LOGS/SampleLog-2024-10-10-113001.csv).
 
 To exclude test fights and keep load times reasonable, log files are ignored if they
 - are over 2 MB,
 - have less then 60 seconds of data,
-- or don't have a GPS column.
+- or don't have a GPS field.
 
 These limits can be customized by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua).
