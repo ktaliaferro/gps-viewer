@@ -27,6 +27,7 @@ function M.getVer()
 end
 
 local maps = m_config.maps
+local crosshair_color = GREEN
 
 --function cache
 local math_floor = math.floor
@@ -74,10 +75,13 @@ local FIRST_VALID_COL = 2
 -- state machine
 local STATE = {
     SPLASH = 0,
+
     SELECT_INDEX_TYPE_INIT = 1,
     SELECT_INDEX_TYPE = 2,
+
     INDEX_FILES_INIT = 3,
     INDEX_FILES = 4,
+
     SELECT_FILE_INIT = 5,
     SELECT_FILE = 6,
 
@@ -104,8 +108,6 @@ local lines = 0
 local index = 0
 local buffer = ""
 
-local current_option = 1
-
 local sensorSelection = {
     { y = 80, label = "Field 1", values = {}, idx = 1, colId = 0, min = 0 },
     { y = 105, label = "Field 2", values = {}, idx = 1, colId = 0, min = 0 },
@@ -113,25 +115,7 @@ local sensorSelection = {
     { y = 155, label = "Field 4", values = {}, idx = 1, colId = 0, min = 0 }
 }
 
-local cursor = 0
-
 local gui_drawn = false
-
-local GRAPH_MODE = {
-    CURSOR = 0,
-    ZOOM = 1,
-    SCROLL = 2,
-    GRAPH_MINMAX = 3
-}
-local graphMode = GRAPH_MODE.CURSOR
-local graphStart = 0
-local graphSize = 0
-local graphTimeBase = 0
-local graphMinMaxEditorIndex = 0
-
---local img_bg1 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg1.png")
---local img_bg2 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg2.png")
---local img_bg3 = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/bg3.png")
 
 map_names = {}
 for i=1, #maps, 1 do
@@ -142,8 +126,6 @@ local selected_map = 1
 
 local styles = {"Points", "Curve"}
 local selected_style=1
-
-local point_sizes = {1,2,3,4}
 local selected_point_size = 4
 
 -- Instantiate a new GUI object
@@ -366,8 +348,10 @@ local function read_and_index_file_list()
         log("read_and_index_file_list: init")
         m_index_file.indexInit()
 
+        -- check logs folder to get list of log files
         log_file_list_raw = get_log_files_list()
 
+        -- read existing index file and remove log files that no longer exist from the index
         log_file_list_raw_idx = 1
         m_index_file.indexRead(log_file_list_raw)
     end
@@ -397,14 +381,13 @@ local function read_and_index_file_list()
             gui_drawn = true
             return false
         else
-            -- index the log file
+            -- index the log file if it is not already in the index
             local filename = log_file_list_raw[log_file_list_raw_idx]
             if filename ~= nil then
                 local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
                 if modelName ~= nil then
                     local model_day = string.format("%s-%s-%s", year, month, day)
 
-                    -- read file
                     local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(filename)
 
                     log("read_and_index_file_list: total_seconds: %s", total_seconds)
@@ -763,8 +746,6 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
 
     m_tables.table_print("sensors-init columns_with_data", columns_with_data)
 
-    current_option = 1
-
     -- creating new window gui
     log("creating new window gui")
     ctx2 = nil
@@ -917,19 +898,17 @@ local function state_PARSE_DATA_refresh(event, touchState)
     if conversionSensorId == 0 then
         conversionSensorId = 1
         conversionSensorProgress = 0
-        local fileTime = m_lib_file_parser.getTotalSeconds(current_session.endTime) - m_lib_file_parser.getTotalSeconds(current_session.startTime)
-        graphTimeBase = valPos / fileTime
 
         for varIndex = 1, 4, 1 do
             if sensorSelection[varIndex].idx >= FIRST_VALID_COL then
                 local columnName = columns_with_data[sensorSelection[varIndex].idx]
-                -- remove column units if exist
                 local i = string.find(columnName, "%(")
                 local unit = ""
 
                 if i ~= nil then
                     unit = string.sub(columnName, i + 1, #columnName - 1)
-                    columnName = string.sub(columnName, 0, i - 1)
+                    --remove column units
+                    --columnName = string.sub(columnName, 0, i - 1)
                 end
                 _points[varIndex] = {
                     min = 9999,
@@ -969,11 +948,7 @@ local function state_PARSE_DATA_refresh(event, touchState)
     end
 
     if conversionSensorId == 4 then
-        graphStart = 0
-        graphSize = valPos * 0.75 -- default zoom
-        cursor = 50
-        graphMinMaxEditorIndex = 0
-        graphMode = GRAPH_MODE.CURSOR
+        map_drawn = false
         state = STATE.SHOW_GRAPH
     else
         conversionSensorProgress = 0
@@ -1156,8 +1131,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- Redraw the map if there are any updates.
     -- Limiting redraws makes the app more responsive to stick inputs.
     if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old then
+        -- draw map background
         lcd.clear(DARKGREEN)
-        if maps[selected_map]["image"] ~= nil then
+        if maps[selected_map]["path"] ~= nil then
+            if maps[selected_map]["image"] == nil then
+                maps[selected_map]["image"] = Bitmap.open(maps[selected_map]["path"])
+            end
             lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
         end
           
@@ -1237,7 +1216,6 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
                     x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
                     y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
-                    local crosshair_color = GREEN
                     if x >= 0 and x <= LCD_W then
                         lcd.drawLine(x,0,x,LCD_H,SOLID,crosshair_color)
                     end
@@ -1271,7 +1249,11 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 lcd.drawText(0,LCD_H-20,"long:" .. long_string, WHITE + SMLSIZE)
 
                 -- draw legend background
-                lcd.drawFilledRectangle(0,0,60,155,BLACK)
+                local width_name, _ = lcd.sizeText(_points[telemetry_index]["name"], WHITE + SMLSIZE)
+                local width_min = lcd.sizeText(string.format("%.1f", tele_max), WHITE + SMLSIZE)
+                local width_max =  lcd.sizeText(string.format("%.1f", tele_min), WHITE + SMLSIZE)
+                local scale_width = math.max(60, width_name, 15+width_min, 15+width_max)
+                lcd.drawFilledRectangle(0,0,scale_width,155,BLACK)
 
                 -- draw field name
                 lcd.drawText(0,0,_points[telemetry_index]["name"], WHITE + SMLSIZE)
@@ -1290,11 +1272,11 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 lcd.drawText(LCD_W-110+30,LCD_H-30,"Timeline", WHITE + SMLSIZE)
                 lcd.drawFilledRectangle(LCD_W-105,LCD_H-8,1,6,WHITE)
                 lcd.drawFilledRectangle(LCD_W-6,LCD_H-8,1,6,WHITE)
-                local selected_proportion = selected_point / n_values
-                lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,WHITE)
                 local timeline_width = 100 * (end_proportion - start_proportion)
                 local timeline_start = LCD_W - 105 + start_proportion * 100
                 lcd.drawFilledRectangle(timeline_start,LCD_H-6,timeline_width,2,WHITE)
+                local selected_proportion = selected_point / n_values
+                lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,crosshair_color)
             end
         end
 

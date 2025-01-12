@@ -9,7 +9,7 @@ M.min_log_length_sec = 60
 M.maps = {
     {
       name = "ARCA small",
-      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_small.png"),
+      path = "/SCRIPTS/TOOLS/gpsViewer/arca_small.png",
       long_min = -97.6074,
       long_max = -97.5984,
       lat_min = 30.3223,
@@ -17,7 +17,7 @@ M.maps = {
     },
     {
       name = "ARCA large",
-      image = Bitmap.open("/SCRIPTS/TOOLS/gpsViewer/arca_large.png"),
+      path = "/SCRIPTS/TOOLS/gpsViewer/arca_large.png",
       long_min = -97.6179,
       long_max = -97.5870,
       lat_min = 30.3154,
@@ -26,7 +26,7 @@ M.maps = {
     {
       -- plot flights at any location on a dark green background
       name = "Blank",
-      image = nil,
+      path = nil,
       long_min = nil,
       long_max = nil,
       lat_min = nil,

@@ -136,6 +136,7 @@ end
 
 function M.getFileDataInfo(file_name)
 
+    -- if the file is in the index, return the info from the index
     for i = 1, #M.log_files_index_info do
         local f_info = M.log_files_index_info[i]
         if file_name == f_info.file_name then
@@ -145,12 +146,14 @@ function M.getFileDataInfo(file_name)
 
     M.m_log.info("getFileDataInfo: file not in index, indexing... %s", file_name)
 
+    -- if the file is not in the index, read it and compute metadata
     local start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = M.m_lib_file_parser.getFileDataInfo(file_name)
 
     if start_time == nil then
         return false, nil, nil, nil, nil, nil, nil, nil
     end
 
+    -- add the file to the index
     updateFile(
         file_name,
         start_time, end_time, total_seconds,
