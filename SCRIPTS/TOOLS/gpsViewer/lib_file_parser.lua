@@ -40,10 +40,12 @@ function M.getFileDataInfo(fileName)
     M.m_log.info("getFileDataInfo(%s)", fileName)
 
     --local t1_model =getTime()
+    local error_message = nil
 
     local hFile = io.open("/LOGS/" .. fileName, "r")
     if hFile == nil then
-        return nil, nil, nil, nil, nil, nil, nil
+        error_message = "not found"
+        return nil, nil, nil, nil, nil, nil, nil, error_message
     end
 
     local buffer = ""
@@ -65,7 +67,8 @@ function M.getFileDataInfo(fileName)
     if string.len(s) > 0 then
         M.m_log.info("File too large, file: %s", fileName)
         io.close(hFile)
-        return nil, nil, nil, nil, nil, nil, nil
+        error_message = "too large"
+        return nil, nil, nil, nil, nil, nil, nil, error_message
     end
 
     -- read Header
@@ -74,7 +77,8 @@ function M.getFileDataInfo(fileName)
     if index == nil then
         M.m_log.info("Header could not be found, file: %s", fileName)
         io.close(hFile)
-        return nil, nil, nil, nil, nil, nil, nil
+        error_message = "without valid header"
+        return nil, nil, nil, nil, nil, nil, nil, error_message
     end
 
     -- get header line
@@ -91,7 +95,8 @@ function M.getFileDataInfo(fileName)
     else
         M.m_log.info("No GPS column, file: %s", fileName)
         io.close(hFile)
-        return nil, nil, nil, nil, nil, nil, nil
+        error_message = "without GPS column"
+        return nil, nil, nil, nil, nil, nil, nil, error_message
     end
 
     start_index = index
@@ -198,7 +203,8 @@ function M.getFileDataInfo(fileName)
     io.close(hFile)
 
     M.m_log.info("File too large, file: %s", fileName)
-    return nil, nil, nil, nil, nil, nil, nil
+    error_message = "too large"
+    return nil, nil, nil, nil, nil, nil, nil, error_message
 end
 
 

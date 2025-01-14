@@ -48,6 +48,11 @@ local max_log_size_mb = m_config.max_log_size_mb
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
 
+local files_indexed_successfully = 0
+local files_too_large = 0
+local files_without_gps = 0
+local files_too_short = 0
+
 local log_file_list_filtered = {}
 local log_file_list_filtered2 = {}
 local filter_model_name
@@ -353,9 +358,10 @@ local function read_and_index_file_list()
 
         -- read existing index file and remove log files that no longer exist from the index
         log_file_list_raw_idx = 1
-        m_index_file.indexRead(log_file_list_raw)
+        m_index_file.indexRead()
     end
  
+    -- index files in the table log_file_list_raw that aren't already indexed
     while true do
         if gui_drawn == false then
             -- Draw the GUI in a separate execution of the run function.
@@ -388,8 +394,13 @@ local function read_and_index_file_list()
                 if modelName ~= nil then
                     local model_day = string.format("%s-%s-%s", year, month, day)
 
-                    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(filename)
-
+                    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = m_index_file.getFileDataInfo(filename)
+                    
+                    if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
+                    if error_message == "too large" then files_too_large = files_too_large  + 1 end
+                    if error_message == "without GPS column" then files_without_gps = files_without_gps + 1 end
+                    if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
+        
                     log("read_and_index_file_list: total_seconds: %s", total_seconds)
                     m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
                     m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
@@ -696,8 +707,13 @@ local function state_SELECT_FILE_refresh(event, touchState)
         return 0
     end
 
-    ctx1.run(event, touchState)
+    lcd.drawText(10, LCD_H-80, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_mb), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), BLACK + SMLSIZE)
 
+    ctx1.run(event, touchState)
+    
     return 0
 end
 
