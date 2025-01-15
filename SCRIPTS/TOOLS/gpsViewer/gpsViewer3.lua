@@ -656,7 +656,13 @@ local function state_SELECT_FILE_init(event, touchState)
 end
 
 local function state_SELECT_FILE_refresh(event, touchState)
-    -- ## file selected
+    -- display indexing status
+    lcd.drawText(10, LCD_H-80, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_mb), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), BLACK + SMLSIZE)
+    
+    -- load indexed data for the selected log file
     if event == EVT_VIRTUAL_NEXT_PAGE or index_type == INDEX_TYPE.LAST then
         log("state_SELECT_FILE_refresh --> EVT_VIRTUAL_NEXT_PAGE: filename: %s", filename)
         if filename == "not found" then
@@ -707,11 +713,7 @@ local function state_SELECT_FILE_refresh(event, touchState)
         return 0
     end
 
-    lcd.drawText(10, LCD_H-80, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_mb), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), BLACK + SMLSIZE)
-
+    -- display file selection menus
     ctx1.run(event, touchState)
     
     return 0
