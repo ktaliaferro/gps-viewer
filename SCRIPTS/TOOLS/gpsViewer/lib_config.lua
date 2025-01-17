@@ -1,7 +1,7 @@
 local M = {}
 
 -- ignore large log files to keep load times reasonable
-M.max_log_size_mb = 2
+M.max_log_size_MB = 2
 
 -- ignore short log files to exclude test flights
 M.min_log_length_sec = 60
@@ -31,7 +31,7 @@ M.maps = {
       long_max = nil,
       lat_min = nil,
       lat_max = nil
-    },
+    }
 }
 
 return M

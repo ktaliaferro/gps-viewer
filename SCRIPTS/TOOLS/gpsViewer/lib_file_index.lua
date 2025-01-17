@@ -135,12 +135,15 @@ function M.indexRead()
 end
 
 function M.getFileDataInfo(file_name)
+    
+    local is_new = nil
 
     -- if the file is in the index, return the info from the index
     for i = 1, #M.log_files_index_info do
         local f_info = M.log_files_index_info[i]
         if file_name == f_info.file_name then
-            return false, f_info.start_time, f_info.end_time, f_info.total_seconds, f_info.total_lines, f_info.start_index, f_info.col_with_data_str, f_info.all_col_str, nil
+            is_new = false
+            return is_new, f_info.start_time, f_info.end_time, f_info.total_seconds, f_info.total_lines, f_info.start_index, f_info.col_with_data_str, f_info.all_col_str, nil
         end
     end
 
@@ -149,9 +152,8 @@ function M.getFileDataInfo(file_name)
     -- if the file is not in the index, read it and compute metadata
     local start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = M.m_lib_file_parser.getFileDataInfo(file_name)
 
-    if start_time == nil then
-        if error_message == nil then error_message = "without start time" end
-        return false, nil, nil, nil, nil, nil, nil, nil, error_message
+    if error_message ~= nil then
+        return is_new, nil, nil, nil, nil, nil, nil, nil, error_message
     end
 
     -- add the file to the index
@@ -164,7 +166,8 @@ function M.getFileDataInfo(file_name)
         all_col_str)
 
     M.indexSave()
-    return true, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message
+    is_new = true
+    return is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message
 end
 
 function M.getFileListDec()

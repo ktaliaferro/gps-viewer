@@ -42,16 +42,20 @@ local string_byte = string.byte
 local heap = 2048
 local hFile
 local min_log_length_sec = m_config.min_log_length_sec
-local max_log_size_mb = m_config.max_log_size_mb
+local max_log_size_MB = m_config.max_log_size_MB
 
 -- read_and_index_file_list()
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
 
 local files_indexed_successfully = 0
+local files_already_indexed = 0
 local files_too_large = 0
 local files_without_gps = 0
 local files_too_short = 0
+
+local log_size_KB = nil
+local logging_interval = nil
 
 local log_file_list_filtered = {}
 local log_file_list_filtered2 = {}
@@ -167,13 +171,41 @@ local function log(fmt, ...)
 end
 --------------------------------------------------------------
 
-local function toDuration1(totalSeconds)
+local function larger(file,size_KB)
+    -- determine if file is larger than size_KB
+    io.seek(file, size_KB * 1024)
+    s = io.read(file, 1)
+    return string.len(s) > 0
+end
+
+local function get_size(filename)
+    -- compute file size in KB using binary search
+    local file = io.open("/LOGS/" .. filename, "r")
+    local size_upper_limit = 1
+    while larger(file,size_upper_limit) do
+        size_upper_limit = size_upper_limit * 2
+    end
+    local size_lower_limit = 0
+    local midpoint = nil
+    while size_upper_limit - size_lower_limit > 2 do
+        local midpoint = math.floor((size_upper_limit + size_lower_limit) * .5)
+        if larger(file,midpoint) then
+            size_lower_limit = midpoint
+        else
+            size_upper_limit = midpoint
+        end
+    end
+    io.close(file)
+    return size_upper_limit
+end
+
+local function toDuration(totalSeconds)
     local hours = math_floor(totalSeconds / 3600)
     totalSeconds = totalSeconds - (hours * 3600)
     local minutes = math_floor(totalSeconds / 60)
     local seconds = totalSeconds - (minutes * 60)
 
-    return string.format("%02.0f",hours) .. ":" .. string.format("%02.0f",minutes) .. ":" .. string.format("%04.1f",seconds)
+    return string.format("%02.0f:%02.0f:%04.1f", hours, minutes, seconds)
 end
 
 local function get_lat(s)
@@ -307,7 +339,7 @@ local function get_log_files_list()
     log("latest day: %s", last_day)
     log("last_log: %s", last_log_day_time)
 
-
+    -- create lists of log files
     local log_files_list_all = {}
     local log_files_list_today = {}
     local log_files_list_latest = {}
@@ -317,14 +349,16 @@ local function get_log_files_list()
         local log_day = string.format("%s-%s-%s", year, month, day)
         local log_day_time = string.format("%s-%s-%s-%s-%s-%s", year, month, day, hour, min, sec)
 
-        log_files_list_all[#log_files_list_all+1] = fn
+        if modelName ~= nil then
+            log_files_list_all[#log_files_list_all+1] = fn
 
-        if log_day==last_day then
-            log_files_list_today[#log_files_list_today+1] = fn
-        end
+            if log_day==last_day then
+                log_files_list_today[#log_files_list_today+1] = fn
+            end
 
-        if log_day_time==last_log_day_time then
-            log_files_list_latest[#log_files_list_latest+1] = fn
+            if log_day_time==last_log_day_time then
+                log_files_list_latest[#log_files_list_latest+1] = fn
+            end
         end
     end
     --m_tables.table_print("log_files_list_all", log_files_list_all)
@@ -396,9 +430,13 @@ local function read_and_index_file_list()
 
                     local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = m_index_file.getFileDataInfo(filename)
                     
-                    if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
-                    if error_message == "too large" then files_too_large = files_too_large  + 1 end
-                    if error_message == "without GPS column" then files_without_gps = files_without_gps + 1 end
+                    if error_message == nil then
+                        if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
+                        if not is_new then files_already_indexed = files_already_indexed + 1 end
+                    else
+                        if error_message == "too large" then files_too_large = files_too_large  + 1 end
+                        if error_message == "without GPS column" then files_without_gps = files_without_gps + 1 end
+                    end
                     if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
         
                     log("read_and_index_file_list: total_seconds: %s", total_seconds)
@@ -657,8 +695,9 @@ end
 
 local function state_SELECT_FILE_refresh(event, touchState)
     -- display indexing status
-    lcd.drawText(10, LCD_H-80, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_mb), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-100, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-80, string.format("%d old log files already indexed", files_already_indexed), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), BLACK + SMLSIZE)
     lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), BLACK + SMLSIZE)
     lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), BLACK + SMLSIZE)
     
@@ -819,6 +858,9 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     sensorSelection[4].colId = get_key(columns_by_header, "longitude")
     sensorSelection[4].idx = FIRST_VALID_COL
 
+    log_size_KB = get_size(filename)
+    logging_interval =  current_session.total_seconds / current_session.total_lines
+
     state = STATE.SELECT_SENSORS
     return 0
 end
@@ -832,6 +874,11 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
         state = STATE.READ_FILE_DATA
         return 0
     end
+    
+    -- display log file info
+    lcd.drawText(10, LCD_H-60, string.format("%d KB log file size", log_size_KB), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-40, string.format("%s log file duration", string.sub(toDuration(current_session.total_seconds),1,-3)), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-20, string.format("%.1f sec logging interval", logging_interval), BLACK + SMLSIZE)
 
     ctx2.run(event, touchState)
 
@@ -991,9 +1038,7 @@ local function drawMain()
     end
     --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
-    if filename == "not found" then
-        lcd.drawText(30, 1, string.format("Invalid log file (over %d MB, under %d sec, or missing GPS data)", max_log_size_mb, min_log_length_sec), WHITE + SMLSIZE)
-    elseif filename ~= nil then
+    if filename ~= nil and filename ~= "not found" then
         lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
     end
 end
@@ -1246,7 +1291,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             if show_ui == 0 or show_ui == 1 then
                 -- draw telemetry of selected point
                 lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
-                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration1(current_session.total_seconds * (selected_point) / (n_values)), WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_values)), WHITE + SMLSIZE)
                 for i = 1,2,1 do
                     if sensorSelection[i].idx ~= 1 then
                         local telemetry_string = ":"

@@ -76,7 +76,7 @@ M.maps = {
       long_max = nil,
       lat_min = nil,
       lat_max = nil
-    },
+    }
 }
 ```
 
