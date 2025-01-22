@@ -832,7 +832,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
         end
     )
     ctx2.label(10, 105, 60+10, 24, "Map")
-    ctx2.dropDown(90+10, 105, 380-10, 24, map_names, 1,
+    ctx2.dropDown(90+10, 105, 380-10, 24, map_names, selected_map,
         function(obj)
             local i = obj.selected
             local var3 = map_names[i]
@@ -842,7 +842,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     )
     
     ctx2.label(10, 130, 60+10, 24, "Style")
-    ctx2.dropDown(90+10, 130, 380-10, 24, styles, 1,
+    ctx2.dropDown(90+10, 130, 380-10, 24, styles, selected_style,
         function(obj)
             local i = obj.selected
             local var4 = styles[i]
