@@ -380,7 +380,15 @@ local function get_log_files_list()
     return nil
 end
 
--- read log file list
+local function display_indexing_status(text_color)
+    lcd.drawText(10, LCD_H-100, string.format("%d new log files indexed successfully", files_indexed_successfully), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-80, string.format("%d old log files already indexed", files_already_indexed), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), text_color + SMLSIZE)
+end
+    
+
 local function read_and_index_file_list()
 
     if (#log_file_list_raw == 0) then
@@ -417,6 +425,8 @@ local function read_and_index_file_list()
                 drawProgress(160, 60, log_file_list_raw_idx - 0.5, #log_file_list_raw)
 
                 log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
+                
+                display_indexing_status(TEXT_COLOR)
             end
             gui_drawn = true
             return false
@@ -694,12 +704,7 @@ local function state_SELECT_FILE_init(event, touchState)
 end
 
 local function state_SELECT_FILE_refresh(event, touchState)
-    -- display indexing status
-    lcd.drawText(10, LCD_H-100, string.format("%d new log files indexed successfully", files_indexed_successfully), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-80, string.format("%d old log files already indexed", files_already_indexed), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), BLACK + SMLSIZE)
+    display_indexing_status(BLACK)
     
     -- load indexed data for the selected log file
     if event == EVT_VIRTUAL_NEXT_PAGE or index_type == INDEX_TYPE.LAST then
