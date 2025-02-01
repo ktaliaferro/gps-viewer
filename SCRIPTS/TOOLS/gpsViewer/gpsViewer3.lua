@@ -343,21 +343,33 @@ local function get_log_files_list()
     local log_files_list_all = {}
     local log_files_list_today = {}
     local log_files_list_latest = {}
+    
+    local already_indexed_all = 0
+    local already_indexed_today = 0
+    local already_indexed_latest = 0
+    
     for fn in dir("/LOGS") do
 
         local modelName, year, month, day, hour, min, sec, m, d, y = string.match(fn, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
         local log_day = string.format("%s-%s-%s", year, month, day)
         local log_day_time = string.format("%s-%s-%s-%s-%s-%s", year, month, day, hour, min, sec)
+        local already_indexed = m_index_file.indexed_filenames[fn]
 
         if modelName ~= nil then
-            log_files_list_all[#log_files_list_all+1] = fn
+            if not already_indexed then
+                log_files_list_all[#log_files_list_all+1] = fn
+            else already_indexed_all = already_indexed_all + 1 end
 
             if log_day==last_day then
-                log_files_list_today[#log_files_list_today+1] = fn
+                if not already_indexed then
+                    log_files_list_today[#log_files_list_today+1] = fn
+                else already_indexed_today = already_indexed_today + 1 end
             end
 
             if log_day_time==last_log_day_time then
-                log_files_list_latest[#log_files_list_latest+1] = fn
+                if not already_indexed then
+                    log_files_list_latest[#log_files_list_latest+1] = fn
+                else already_indexed_latest = already_indexed_latest + 1 end
             end
         end
     end
@@ -367,12 +379,15 @@ local function get_log_files_list()
 
     if index_type == INDEX_TYPE.ALL then
         log("using files for index of type ALL")
+        files_already_indexed = already_indexed_all
         return log_files_list_all
     elseif index_type == INDEX_TYPE.TODAY then
         log("using files for index of type TODAY")
+        files_already_indexed = already_indexed_today
         return log_files_list_today
     elseif index_type == INDEX_TYPE.LAST then
         log("using files for index of type LAST")
+        files_already_indexed = already_indexed_latest
         return log_files_list_latest
     end
 
@@ -395,12 +410,12 @@ local function read_and_index_file_list()
         log("read_and_index_file_list: init")
         m_index_file.indexInit()
 
+        -- read existing index file and remove log files that no longer exist from the index
+        m_index_file.indexRead()
+
         -- check logs folder to get list of log files
         log_file_list_raw = get_log_files_list()
-
-        -- read existing index file and remove log files that no longer exist from the index
         log_file_list_raw_idx = 1
-        m_index_file.indexRead()
     end
  
     -- index files in the table log_file_list_raw that aren't already indexed

@@ -11,6 +11,8 @@ M.idx_file_name = "/LOGS/gps-viewer.csv"
 
 M.log_files_index_info = {}
 
+M.indexed_filenames = {}
+
 function M.compare_file_names_inc(a, b)
     local a1 = string.sub(a.file_name, -21, -5)
     local b1 = string.sub(b.file_name, -21, -5)
@@ -64,6 +66,7 @@ function M.indexPrint(prefix)
     M.m_log.info("------------- show end")
 end
 
+-- read existing index file and remove log files that no longer exist from the index
 function M.indexRead()
     M.m_log.info("indexRead()")
     M.m_tables.table_clear(M.log_files_index_info)
@@ -121,6 +124,7 @@ function M.indexRead()
             if files_on_disk[file_name] == "OK" then
                 --m_log.info("files_on_disk exist: %s", file_name)
                 updateFile(file_name, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str)
+                M.indexed_filenames[file_name] = true
             else
                 m_log.info("files_on_disk not exist: %s", file_name)
                 is_index_have_deleted_files = true
@@ -149,7 +153,7 @@ function M.getFileDataInfo(file_name)
 
     M.m_log.info("getFileDataInfo: file not in index, indexing... %s", file_name)
 
-    -- if the file is not in the index, read it and compute metadata
+    -- if the file is not in the index, read the file and compute metadata
     local start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = M.m_lib_file_parser.getFileDataInfo(file_name)
 
     if error_message ~= nil then

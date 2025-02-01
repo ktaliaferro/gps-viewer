@@ -20,12 +20,11 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 To open the app, press the system button on your transmitter and select GPS Viewer.
 
-1. Select log files to index.  This step measures the duration of each log file and determines which fields have data
- that changes over time.
+1. Select log files to index.  This step measures the duration of each log file and determines which fields have data that changes over time.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
 
     ![screenshot](images/step_01.png)
 
-2. Select a log file from the index.  For large log files with a short logging interval, it is recommended to set the accuracy to 1/10.  This will plot every 10th point and make the sticks more responsive in step 4.
+2. Select a log file from the index.  For large log files, it is recommended to set the accuracy to 1/10.  This will plot every 10th point and make the sticks more responsive in step 4 below.
 
     ![screenshot](images/step_02.png)
 
@@ -82,6 +81,4 @@ M.maps = {
 
 ## Log File Requirements
 
-For the app to function, the logged flight data must have a "GPS" field with latitude and longitude values separated by a space.  See the sample log file [SampleLog-2024-10-10-113001.csv](LOGS/SampleLog-2024-10-10-113001.csv).
-
-To keep load times reasonable and exclude test flights, log files are ignored if they are over 2 MB in size or have less than 60 seconds of data.  These limits can be customized by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua).  To keep log files small, it is recommended to use a logging [interval](https://manual.edgetx.org/color-radios/model-settings/special-functions) of 1 second or longer in EdgeTX.
+Log files are ignored if they don't have a GPS field or are over 2 MB in size.  This size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result long indexing times in step 1 and poor responsiveness when viewing the plot in step 4 of the [Use](#use) section above.  Instead, to keep log files small, it is recommended to use a logging frequency of 1 Hz or less in EdgeTX.
