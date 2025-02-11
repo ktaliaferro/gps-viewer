@@ -1365,13 +1365,19 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
         -- draw help
         if show_ui == 0 then
+            local box_width = 160
+            local box_height = 20
+            lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
+            lcd.drawText(LCD_W-box_width+5,0,"press wheel: show help", WHITE + SMLSIZE)
+        elseif show_ui == 1 then
             local box_width = 220
-            lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,140,BLACK)
-            lcd.drawText(LCD_W-box_width+5,0,"elevator stick: zoom timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,20,"aileron stick: pan timeline", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,40,"rudder stick: move crosshair", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,60,"scroll wheel: fine tune crosshair", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,80,"press wheel: toggle user interface", WHITE + SMLSIZE)
+            local box_height = 140
+            lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
+            lcd.drawText(LCD_W-box_width+5,0,"press wheel: toggle user interface", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,20,"elevator stick: zoom timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,40,"aileron stick: pan timeline", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,60,"rudder stick: move crosshair", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,80,"scroll wheel: fine tune crosshair", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,100,"next page: toggle telemetry field", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,120,"press and hold return: exit", WHITE + SMLSIZE)
         end
