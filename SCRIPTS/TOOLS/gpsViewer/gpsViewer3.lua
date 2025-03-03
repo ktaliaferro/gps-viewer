@@ -1103,7 +1103,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     
     local c = nil
     if n_values == 0 then
-        n_values = current_session.total_lines - 1
+        n_values = valPos - 1
     end
     
     local lat_index = 3

@@ -53,4 +53,4 @@ To generate a 480x272 satellite image, you can use [this map generator](https://
 
 ## Log File Requirements
 
-Log files are ignored if they don't have a GPS field or are over 2 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result long load times.  Instead, to keep log files small, it is recommended to use a logging frequency of 1 Hz or less in EdgeTX.
+Log files are ignored if they don't have a GPS field or are over 2 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result long load times.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
