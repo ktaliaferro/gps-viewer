@@ -396,11 +396,15 @@ local function get_log_files_list()
 end
 
 local function display_indexing_status(text_color)
-    lcd.drawText(10, LCD_H-100, string.format("%d new log files indexed successfully", files_indexed_successfully), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-80, string.format("%d old log files already indexed", files_already_indexed), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-60, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-40, string.format("%d log files not indexed due to missing GPS field", files_without_gps), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), text_color + SMLSIZE)
+    local offset = 0
+    if min_log_length_sec > 0 then
+        offset = 20
+        lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), text_color + SMLSIZE)
+    end
+    lcd.drawText(10, LCD_H-80 - offset, string.format("%d new log files indexed successfully", files_indexed_successfully), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-60 - offset, string.format("%d old log files already indexed", files_already_indexed), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-20 - offset, string.format("%d log files not indexed due to missing GPS field", files_without_gps), text_color + SMLSIZE)
 end
     
 
@@ -608,7 +612,7 @@ local function state_SELECT_INDEX_TYPE_init(event, touchState)
     log("state_SELECT_INDEX_TYPE_init()")
     log("creating new window gui")
 
-    ctx3.label(10, 30, 70, 24, "Indexing selection:", m_libgui.FONT_SIZES.FONT_8)
+    ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
 
     ctx3.button(90,  60, 320, 55, "Only last flight (fast)", onButtonIndexTypeLastFlight)
     ctx3.button(90, 130, 320, 55, "Last flights day", onButtonIndexTypeToday)
@@ -630,7 +634,7 @@ local function state_SELECT_INDEX_TYPE_refresh(event, touchState)
         return 0
     end
 
-    lcd.drawText(30, 1, "Indexing type for new logs", WHITE + SMLSIZE)
+    -- lcd.drawText(30, 1, "Indexing type for new logs", WHITE + SMLSIZE)
 
     ctx3.run(event, touchState)
     return 0
@@ -722,7 +726,7 @@ local function state_SELECT_FILE_refresh(event, touchState)
     display_indexing_status(BLACK)
     
     -- load indexed data for the selected log file
-    if event == EVT_VIRTUAL_NEXT_PAGE or index_type == INDEX_TYPE.LAST then
+    if event == EVT_VIRTUAL_NEXT_PAGE then
         log("state_SELECT_FILE_refresh --> EVT_VIRTUAL_NEXT_PAGE: filename: %s", filename)
         if filename == "not found" then
             m_log.warn("state_SELECT_FILE_refresh: trying to next-page, but no logfile available, ignoring.")
