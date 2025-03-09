@@ -24,11 +24,11 @@ To open the app, press the system button on your transmitter and select GPS View
 
     ![screenshot](images/step_01.png)
 
-2. Select a log file from the index.  For large log files, it is recommended to set the accuracy to 1/10.  This will plot every 10th point and make the sticks more responsive in step 4 below.
+2. Select a log file from the index.
 
     ![screenshot](images/step_02.png)
 
-3. Select fields to plot, a map to plot on, and the plot style.  Fields with data that doesn't change over time are excluded.
+3. Select fields to plot, a map to plot on, and the granularity.  Fields with data that doesn't change over time are excluded.  For large log files, it is recommended to use a low granularity.  This will plot fewer data points and make the sticks more responsive in step 4 below.
 
     ![screenshot](images/step_03.png)
 
@@ -38,8 +38,9 @@ To open the app, press the system button on your transmitter and select GPS View
     - aileron stick: pan timeline
     - rudder stick: move crosshair
     - scroll wheel: fine tune crosshair
-    - scroll button: toggle user interface
-    - next page button: toggle telemetry field
+    - scroll button: toggle plot style
+    - telemetry button: toggle telemetry field
+    - next page button: toggle user interface
 
     ![screenshot](images/step_04.png)
 

@@ -133,7 +133,7 @@ end
 
 local selected_map = 1
 
-local styles = {"Points", "Curve"}
+local styles = {"Curve", "Points"}
 local selected_style=1
 local selected_point_size = 4
 
@@ -399,12 +399,12 @@ local function display_indexing_status(text_color)
     local offset = 0
     if min_log_length_sec > 0 then
         offset = 20
-        lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds", files_too_short, min_log_length_sec), text_color + SMLSIZE)
+        lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds.", files_too_short, min_log_length_sec), text_color + SMLSIZE)
     end
-    lcd.drawText(10, LCD_H-80 - offset, string.format("%d new log files indexed successfully", files_indexed_successfully), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-60 - offset, string.format("%d old log files already indexed", files_already_indexed), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB", files_too_large, max_log_size_MB), text_color + SMLSIZE)
-    lcd.drawText(10, LCD_H-20 - offset, string.format("%d log files not indexed due to missing GPS field", files_without_gps), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-80 - offset, string.format("%d new log files indexed successfully.", files_indexed_successfully), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-60 - offset, string.format("%d old log files already indexed.", files_already_indexed), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB.", files_too_large, max_log_size_MB), text_color + SMLSIZE)
+    lcd.drawText(10, LCD_H-20 - offset, string.format("%d log files not indexed due to missing GPS field.", files_without_gps), text_color + SMLSIZE)
 end
     
 
@@ -704,10 +704,6 @@ local function state_SELECT_FILE_init(event, touchState)
         )
         onLogFileChange(ddLogFile)
 
-        ctx1.label(10, 130, 60, 24, "Accuracy")
-        dd4 = ctx1.dropDown(90, 130, 380, 24, accuracy_list, 1, onAccuracyChange)
-        onAccuracyChange(dd4)
-
     end
 
     --filter_model_name_i
@@ -865,15 +861,9 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
         end
     )
     
-    ctx2.label(10, 130, 60+10, 24, "Style")
-    ctx2.dropDown(90+10, 130, 380-10, 24, styles, selected_style,
-        function(obj)
-            local i = obj.selected
-            local var4 = styles[i]
-            log("Selected style: " .. var4)
-            selected_style = i
-        end
-    )
+    ctx2.label(10, 130, 60+10, 24, "Granularity")
+    dd4 = ctx2.dropDown(90+10, 130, 380-10, 24, accuracy_list, 1, onAccuracyChange)
+    onAccuracyChange(dd4)
 
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
     sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
@@ -1135,6 +1125,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local telemetry_index_old = telemetry_index
     local start_point_old = start_point
     local end_point_old = end_point
+    local selected_style_old = selected_style
 
     local adjust_raw
     local adjust
@@ -1143,7 +1134,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- use elevator stick to zoom
     adjust_raw = getValue('ele') / 1024
     if math.abs(adjust_raw) > deadzone then
-        adjust = adjust_raw * .1
+        adjust = adjust_raw * .1 * -1
         if adjust < -1 * (end_proportion - start_proportion) / 2 then adjust = 0 end
         end_proportion = end_proportion + adjust 
         start_proportion = start_proportion - adjust
@@ -1205,19 +1196,26 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         if selected_point > end_point then selected_point = end_point end
     end
 
-    -- press scroll wheel to toggle the user interface
+    -- press scroll wheel to toggle the style
     if event == EVT_ROT_BREAK then
-        show_ui = (show_ui + 1) % 4
+        -- show_ui = (show_ui + 1) % 4
+        selected_style = (selected_style % 2) + 1
     end
     
-    -- press next page to toggle telemetry
+    -- press next page to toggle the UI
     if event == EVT_VIRTUAL_NEXT_PAGE then
+        show_ui = (show_ui + 1) % 4
+        --telemetry_index = (telemetry_index % 2) + 1
+    end
+    
+    -- press tele to toggle telemetry
+    if event == EVT_TELEM_BREAK then
         telemetry_index = (telemetry_index % 2) + 1
     end
     
     -- Redraw the map if there are any updates.
     -- Limiting redraws makes the app more responsive to stick inputs.
-    if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old then
+    if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old or selected_style ~= selected_style_old then
         -- draw map background
         lcd.clear(DARKGREEN)
         if maps[selected_map]["path"] ~= nil then
@@ -1372,18 +1370,19 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             local box_width = 160
             local box_height = 20
             lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
-            lcd.drawText(LCD_W-box_width+5,0,"press wheel: show help", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,0,"press next page: show help", WHITE + SMLSIZE)
         elseif show_ui == 1 then
             local box_width = 220
-            local box_height = 140
+            local box_height = 160
             lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
-            lcd.drawText(LCD_W-box_width+5,0,"press wheel: toggle user interface", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,0,"press next page: toggle user interface", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,20,"elevator stick: zoom timeline", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,40,"aileron stick: pan timeline", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,60,"rudder stick: move crosshair", WHITE + SMLSIZE)
             lcd.drawText(LCD_W-box_width+5,80,"scroll wheel: fine tune crosshair", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,100,"next page: toggle telemetry field", WHITE + SMLSIZE)
-            lcd.drawText(LCD_W-box_width+5,120,"press and hold return: exit", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,100,"press wheel: toggle plot style", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,120,"press tele: toggle telemetry field", WHITE + SMLSIZE)
+            lcd.drawText(LCD_W-box_width+5,140,"press and hold return: exit", WHITE + SMLSIZE)
         end
         map_drawn = true
         map_draws = map_draws + 1
