@@ -44,7 +44,6 @@ local hFile
 local min_log_length_sec = m_config.min_log_length_sec
 local max_log_size_MB = m_config.max_log_size_MB
 
--- read_and_index_file_list()
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
 
@@ -63,8 +62,8 @@ local filter_model_name
 local filter_model_name_idx = 1
 local filter_date
 local filter_date_idx = 1
-local model_name_list = { "-- all --" }
-local date_list = { "-- all --" }
+local model_name_list
+local date_list
 local accuracy_list = { "1/1 (read every line)", "1/2 (every 2nd line)", "1/5 (every 5th line)", "1/10 (every 10th line)" }
 local ddModel = nil
 local ddLogFile = nil -- log-file dropDown object
@@ -226,6 +225,19 @@ local function get_long(s)
     return coordinates[2]
 end
 
+local function drawMain()
+    lcd.clear()
+
+    -- draw top-bar
+    lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
+    --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+
+    if filename ~= nil and filename ~= "not found" then
+        -- draw log file name
+        lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
+    end
+end
+
 local function collectData()
     if hFile == nil then
         buffer = ""
@@ -299,9 +311,6 @@ end
 -- ---------------------------------------------------------------------------------------------------------
 
 local function compare_dates_inc(a, b)
-    return a < b
-end
-local function compare_dates_dec(a, b)
     return a < b
 end
 
@@ -415,31 +424,26 @@ local function read_and_index_file_list()
         m_index_file.indexInit()
 
         -- read existing index file and remove log files that no longer exist from the index
-        m_index_file.indexRead()
+        model_name_list, date_list = m_index_file.indexRead()
 
-        -- check logs folder to get list of log files
+        -- check logs folder to get list of log files that aren't already indexed
         log_file_list_raw = get_log_files_list()
         log_file_list_raw_idx = 1
     end
  
     -- index files in the table log_file_list_raw that aren't already indexed
-    while true do
+    while log_file_list_raw_idx <= #log_file_list_raw do
+        filename = log_file_list_raw[log_file_list_raw_idx]
         if gui_drawn == false then
             -- Draw the GUI in a separate execution of the run function.
             -- Otherwise, the GUI will be blank while the first file is indexing.
-            local filename = log_file_list_raw[log_file_list_raw_idx]
             if filename ~= nil then
-                -- draw top-bar
-                lcd.clear()
-                lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-                --lcd.drawBitmap(img_bg2, 0, 0)
-                --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
+                drawMain()
 
                 -- draw state
                 lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
                 lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
                 lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
-                lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
 
                 drawProgress(160, 60, log_file_list_raw_idx - 0.5, #log_file_list_raw)
 
@@ -451,7 +455,6 @@ local function read_and_index_file_list()
             return false
         else
             -- index the log file if it is not already in the index
-            local filename = log_file_list_raw[log_file_list_raw_idx]
             if filename ~= nil then
                 local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
                 if modelName ~= nil then
@@ -475,11 +478,9 @@ local function read_and_index_file_list()
             end
             log_file_list_raw_idx = log_file_list_raw_idx + 1
             gui_drawn = false
-            if log_file_list_raw_idx > #log_file_list_raw then
-                return true
-            end
         end
     end
+    return true
 end
 
 local function onLogFileChange(obj)
@@ -642,6 +643,7 @@ end
 
 local function state_INDEX_FILES_INIT(event, touchState)
     log("state_INDEX_FILES_INIT()")
+    lcd.drawText(5, 30, "Generating list of log files", TEXT_COLOR + BOLD)
     state = STATE.INDEX_FILES
     return 0
 end
@@ -884,7 +886,7 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
         state = STATE.SELECT_FILE_INIT
         return 0
 
-    elseif event == EVT_VIRTUAL_NEXT_PAGE then
+    elseif event == EVT_VIRTUAL_NEXT_PAGE and sensorSelection[1].idx ~= 1 then
         state = STATE.READ_FILE_DATA
         return 0
     end
@@ -1035,26 +1037,6 @@ local function state_PARSE_DATA_refresh(event, touchState)
     end
 
     return 0
-end
-
-local function drawMain()
-    lcd.clear()
-
-    -- draw background
-    if state == STATE.SPLASH then
-        --lcd.drawBitmap(img_bg1, 0, 0)
-    elseif state == STATE.SHOW_GRAPH then
-        --lcd.drawBitmap(img_bg3, 0, 0)
-    else
-        -- draw top-bar
-        lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
-        --lcd.drawBitmap(img_bg2, 0, 0)
-    end
-    --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
-
-    if filename ~= nil and filename ~= "not found" then
-        lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
-    end
 end
 
 local function blank_map_boundary(points_long_min, points_long_max, points_lat_min, points_lat_max)
@@ -1400,7 +1382,7 @@ function M.run(event, touchState)
         return 2
     end
 
-    if state ~= STATE.SHOW_GRAPH then drawMain() end
+    if state ~= STATE.SHOW_GRAPH and state ~= STATE.INDEX_FILES then drawMain() end
 
     if state == STATE.SPLASH then
         return state_SPLASH()

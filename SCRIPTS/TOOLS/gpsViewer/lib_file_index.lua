@@ -25,6 +25,10 @@ function M.compare_file_names_dec(a, b)
     return a1 > b1
 end
 
+function M.compare(a, b)
+    return a < b
+end
+
 function M.indexInit()
     M.m_log.info("indexInit()")
     M.m_tables.table_clear(M.log_files_index_info)
@@ -70,9 +74,11 @@ end
 function M.indexRead()
     M.m_log.info("indexRead()")
     M.m_tables.table_clear(M.log_files_index_info)
+    local model_name_list = { "-- all --" }
+    local date_list = { "-- all --" }
     local hFile = io.open(M.idx_file_name, "r")
     if hFile == nil then
-        return
+        return model_name_list, date_list
     end
 
     -- read Header
@@ -80,7 +86,7 @@ function M.indexRead()
     local index = string.find(data1, "\n")
     if index == nil then
         M.m_log.info("Index header could not be found, file: %s", M.idx_file_name)
-        return
+        return model_name_list, date_list
     end
 
     -- check that index file is correct version
@@ -88,7 +94,7 @@ function M.indexRead()
     M.m_log.info("api_ver: %s", api_ver)
     if api_ver ~= "3" then
         M.m_log.info("api_ver of index files is not updated (api_ver=%d)", api_ver)
-        return
+        return model_name_list, date_list
     end
 
     -- list actual files on disk
@@ -125,6 +131,11 @@ function M.indexRead()
                 --m_log.info("files_on_disk exist: %s", file_name)
                 updateFile(file_name, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str)
                 M.indexed_filenames[file_name] = true
+                -- save model names and dates for filtering
+                local modelName, year, month, day, hour, min, sec, m, d, y = string.match(file_name, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
+                local model_day = string.format("%s-%s-%s", year, month, day)
+                m_tables.list_ordered_insert(model_name_list, modelName, M.compare, 2)
+                m_tables.list_ordered_insert(date_list, model_day, M.compare, 2)
             else
                 m_log.info("files_on_disk not exist: %s", file_name)
                 is_index_have_deleted_files = true
@@ -136,6 +147,7 @@ function M.indexRead()
     if is_index_have_deleted_files == true then
         M.indexSave()
     end
+    return model_name_list, date_list
 end
 
 function M.getFileDataInfo(file_name)
