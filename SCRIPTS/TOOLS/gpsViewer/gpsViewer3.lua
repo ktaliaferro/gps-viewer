@@ -348,7 +348,7 @@ local function get_log_files_list()
     log("latest day: %s", last_day)
     log("last_log: %s", last_log_day_time)
 
-    -- create lists of log files
+    -- create lists of log files to index
     local log_files_list_all = {}
     local log_files_list_today = {}
     local log_files_list_latest = {}
@@ -383,9 +383,10 @@ local function get_log_files_list()
         end
     end
     --m_tables.table_print("log_files_list_all", log_files_list_all)
-    m_tables.table_print("log_files_list_today", log_files_list_today)
-    m_tables.table_print("log_files_list_latest", log_files_list_latest)
+    --m_tables.table_print("log_files_list_today", log_files_list_today)
+    --m_tables.table_print("log_files_list_latest", log_files_list_latest)
 
+    -- return list of log files to index
     if index_type == INDEX_TYPE.ALL then
         log("using files for index of type ALL")
         files_already_indexed = already_indexed_all
@@ -1046,6 +1047,8 @@ local function blank_map_boundary(points_long_min, points_long_max, points_lat_m
     -- compute width and center of data points
     local height = points_lat_max - points_lat_min
     local width = points_long_max - points_long_min
+    if height <= 0 then height = 1 end -- avoid division by zero if height = 0
+    if width <= 0 then width = 1 end -- avoid division by zero if width = 0
     local center_x = points_long_min + width / 2
     local center_y = points_lat_min + height / 2
 
@@ -1217,6 +1220,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             local tele_max = _points[telemetry_index]["max"]
             local tele_min = _points[telemetry_index]["min"]
             local dt = tele_max - tele_min
+            if dt <= 0 then dt = 1 end -- avoid division by zero if dt=0
 
             local n_gps_values = 0
             local n_map_values = 0
