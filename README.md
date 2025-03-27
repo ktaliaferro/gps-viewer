@@ -48,7 +48,9 @@ To exit the app, press and hold the return button.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank map or add a 480x272 satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank map (shown below) or add a 480x272 satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.
+
+![screenshot](images/blank_map.png)
 
 To generate a 480x272 satellite image, you can use [this map generator](https://ethosmap.hobby4life.nl/).  Alternatively, you can use [Google Maps](https://www.google.com/maps), take a screenshot, and manually crop and resize it using a free image editing program like [Gimp](https://www.gimp.org/).
 
