@@ -25,12 +25,8 @@ M.maps = {
     },
     {
       -- plot flights at any location on a dark green background
-      name = "Blank",
-      path = nil,
-      long_min = nil,
-      long_max = nil,
-      lat_min = nil,
-      lat_max = nil
+      -- long_min, long_max, lat_min, and lat_max are computed automatically
+      name = "Blank"
     }
 }
 

@@ -876,7 +876,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     sensorSelection[4].idx = FIRST_VALID_COL
 
     log_size_KB = get_size(filename)
-    logging_interval =  current_session.total_seconds / current_session.total_lines
+    logging_interval =  current_session.total_seconds / (current_session.total_lines - 1)
 
     state = STATE.SELECT_SENSORS
     return 0
@@ -1083,6 +1083,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     local c = nil
     if n_values == 0 then
         n_values = valPos - 1
+        -- Note that n_values will be significantly smaller than current_session.total_lines
+        -- if the granularity is less than 1.
     end
     
     local lat_index = 3

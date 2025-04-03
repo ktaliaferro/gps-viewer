@@ -108,6 +108,11 @@ function M.getFileDataInfo(fileName)
         --M.m_log.info("profiler: start")
         --local t1 =getTime()
         local data2 = io.read(hFile, 2048)
+        if i == 1 and data2 == "" then
+            -- log file has no data
+            error_message = "no data"
+            return nil, nil, nil, nil, nil, nil, nil, error_message
+        end
         --M.m_utils.timeProfilerAdd('read()', t1);
 
         -- file read done
@@ -141,6 +146,9 @@ function M.getFileDataInfo(fileName)
                 end
             end
 
+            if total_lines < 2 then
+                error_message = "less than two lines of data"
+            end
             return start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message
         end
 
