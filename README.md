@@ -1,10 +1,16 @@
 # GPS Viewer
 
-GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality. 
+GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality.
 
 ![screenshot](images/screenshot_points.png)
 
-It's also useful for assessing flight path consistency over multiple laps and verifying that the aircraft remains within the desired air space.
+It can also be used to
+- tune radio antenna alignment,
+- assess GPS data accuracy before using it for autonomous flight,
+- assess flight path consistency over multiple laps for racing and aerobatic competitions, and
+- verify that the aircraft remains within the desired airspace.
+
+Special thanks to Lee from the Painless360 Youtube channel for covering some of these use cases in more detail in [this video](https://www.youtube.com/watch?v=e8nbd5bs0Eg).
 
 ![screenshot](images/screenshot_curve.png)
 
