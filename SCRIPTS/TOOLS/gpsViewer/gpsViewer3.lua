@@ -208,6 +208,7 @@ local function toDuration(totalSeconds)
 end
 
 local function get_lat(s)
+    if s == nil or s == "" then return nil end
     local coordinates = {}
     for coordinate in string_gmatch(s,"[^%s]+")
     do
@@ -217,6 +218,7 @@ local function get_lat(s)
 end
 
 local function get_long(s)
+    if s == nil or s == "" then return nil end
     local coordinates = {}
     for coordinate in string_gmatch(s,"[^%s]+")
     do
@@ -1017,7 +1019,8 @@ local function state_PARSE_DATA_refresh(event, touchState)
                 if val > _points[conversionSensorId].max then
                     _points[conversionSensorId].max = val
                     _points[conversionSensorId].maxpos = i
-                elseif val < _points[conversionSensorId].min then
+                end
+                if val < _points[conversionSensorId].min then
                     _points[conversionSensorId].min = val
                     _points[conversionSensorId].minpos = i
                 end
@@ -1047,10 +1050,19 @@ local function blank_map_boundary(points_long_min, points_long_max, points_lat_m
     -- compute width and center of data points
     local height = points_lat_max - points_lat_min
     local width = points_long_max - points_long_min
-    if height <= 0 then height = 1 end -- avoid division by zero if height = 0
-    if width <= 0 then width = 1 end -- avoid division by zero if width = 0
-    local center_x = points_long_min + width / 2
-    local center_y = points_lat_min + height / 2
+    local center_x, center_y
+    if height <= 0 then
+        height = 1 -- avoid division by zero if height == 0
+        center_y = points_lat_min
+    else
+        center_y = points_lat_min + height / 2
+    end 
+    if width <= 0 then
+        width = 1 -- avoid division by zero if width = 0
+        center_x = points_long_min
+    else
+        center_x = points_long_min + width / 2
+    end 
 
     -- add padding on each side
     local padding = 0.1
