@@ -149,7 +149,6 @@ local telemetry_index = 1
 local show_ui = 0
 local map_drawn = false
 local map_draws = 0
-local n_values = 0
 local start_point = 0
 local end_point = 0
 
@@ -249,6 +248,7 @@ local function collectData()
 
         valPos = 0
         lines = 0
+        
         log(string.format("current_session.total_lines: %d", current_session.total_lines))
 
         _points = {}
@@ -271,6 +271,7 @@ local function collectData()
 
     buffer = buffer .. read
     local i = 0
+    local gpsID = get_key(columns_by_header,"GPS")
 
     for line in string_gmatch(buffer, "([^\n]+)\n") do
         if math.fmod(lines, skipLines) == 0 then
@@ -279,7 +280,6 @@ local function collectData()
             for varIndex = 1, 4, 1 do
                 if sensorSelection[varIndex].idx >= FIRST_VALID_COL then
                     local colId = sensorSelection[varIndex].colId
-                    local gpsID = get_key(columns_by_header,"GPS")
                     if columns_by_header[colId] == "latitude" then
                         _values[varIndex][valPos] = get_lat(vals[gpsID])
                     elseif columns_by_header[colId] == "longitude" then
@@ -670,6 +670,7 @@ local function state_INDEX_FILES(event, touchState)
 end
 
 local function state_SELECT_FILE_init(event, touchState)
+    
     m_tables.table_clear(log_file_list_filtered)
     filter_log_file_list(nil, nil, false)
 
@@ -1092,12 +1093,9 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         return 0
     end
     
-    local c = nil
-    if n_values == 0 then
-        n_values = valPos - 1
-        -- Note that n_values will be significantly smaller than current_session.total_lines
-        -- if the granularity is less than 1.
-    end
+    local n_points = valPos
+    -- Note that n_points will be significantly smaller than
+    -- current_session.total_lines if skipLines > 1.
     
     local lat_index = 3
     local long_index = 4
@@ -1152,10 +1150,10 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     end
     
     -- apply zoom and pan to compute start and end points
-    start_point = math.floor(start_proportion * n_values)
-    end_point = math.floor(end_proportion * n_values)
+    start_point = math.floor(start_proportion * (n_points-1))
+    end_point = math.floor(end_proportion * (n_points-1))
     if start_point < 0 then start_point = 0 end
-    if end_point > n_values then end_point = n_values end
+    if end_point > (n_points-1) then end_point = (n_points-1) end
 
     -- use scroll wheel to increment time
     if event == EVT_ROT_LEFT then
@@ -1172,11 +1170,10 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         selected_point = math.floor(selected_point + adjust)
     end
     
-    
     if selected_point ~= selected_point_old then
         -- if selected point is out of bounds, then pan accordingly
         if selected_point < 0 then selected_point = 0 end
-        if selected_point > n_values then selected_point = n_values end
+        if selected_point > (n_points-1) then selected_point = (n_points-1) end
         if selected_point < start_point then
             local shift = start_point - selected_point
             end_point = end_point - shift
@@ -1187,8 +1184,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             start_point = start_point + shift
             end_point = end_point + shift
         end
-        start_proportion = start_point / n_values
-        end_proportion = end_point / n_values
+        start_proportion = start_point / (n_points-1)
+        end_proportion = end_point / (n_points-1)
     else
         -- if selected point is out of bounds, then scroll accordingly
         if selected_point < start_point then selected_point = start_point end
@@ -1197,14 +1194,12 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
     -- press scroll wheel to toggle the style
     if event == EVT_ROT_BREAK then
-        -- show_ui = (show_ui + 1) % 4
         selected_style = (selected_style % 2) + 1
     end
     
     -- press next page to toggle the UI
     if event == EVT_VIRTUAL_NEXT_PAGE then
         show_ui = (show_ui + 1) % 4
-        --telemetry_index = (telemetry_index % 2) + 1
     end
     
     -- press tele to toggle telemetry
@@ -1236,8 +1231,8 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             local dt = tele_max - tele_min
             if dt <= 0 then dt = 1 end -- avoid division by zero if dt=0
 
-            local n_gps_values = 0
-            local n_map_values = 0
+            local n_gps_values = 0 -- number of points with valid GPS data
+            local n_map_values = 0 -- number of points with GPS data that is on the selected map
 
             if styles[selected_style] ==  "Curve" then
                 -- draw curve using line segments
@@ -1252,16 +1247,16 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                         x = (_values[long_index][i] - long_min) / dx * LCD_W
                         y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
                         z = (_values[telemetry_index][i] - tele_min) / dt * 255
-                        if n_gps_values > 0
-                            and x >= 0 and x <= LCD_W
-                            and y >= 0 and y <= LCD_H
-                            and z >= 0 and z <= 255
-                            and x_old >= 0 and x_old <= LCD_W
-                            and y_old >= 0 and y_old <= LCD_H
-                            then
-                            c = lcd.RGB(250,z,z)
-                            lcd.drawLine(x_old,y_old,x,y,SOLID,c)
+                        if x >= 0 and x <= LCD_W
+                                and y >= 0 and y <= LCD_H
+                                and z >= 0 and z <= 255 then
                             n_map_values = n_map_values + 1
+                            if n_gps_values > 0
+                                    and x_old >= 0 and x_old <= LCD_W
+                                    and y_old >= 0 and y_old <= LCD_H then
+                                local c = lcd.RGB(250,z,z)
+                                lcd.drawLine(x_old,y_old,x,y,SOLID,c)
+                            end
                         end
                         n_gps_values = n_gps_values + 1
                     end
@@ -1274,10 +1269,9 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                         y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
                         z = (_values[telemetry_index][i] - tele_min) / dt * 255
                         if x >= 0 and x <= LCD_W
-                            and y >= 0 and y <= LCD_H
-                            and z >= 0 and z <= 255
-                            then
-                            c = lcd.RGB(255,z,z)
+                                and y >= 0 and y <= LCD_H
+                                and z >= 0 and z <= 255 then
+                            local c = lcd.RGB(255,z,z)
                             lcd.drawFilledRectangle(x,y,selected_point_size,selected_point_size,c)
                             n_map_values = n_map_values + 1
                         end
@@ -1313,7 +1307,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             if show_ui == 0 or show_ui == 1 then
                 -- draw telemetry of selected point
                 lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
-                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_values)), WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_points-1)), WHITE + SMLSIZE)
                 for i = 1,2,1 do
                     if sensorSelection[i].idx ~= 1 then
                         local telemetry_string = ":"
@@ -1360,7 +1354,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
                 local timeline_width = 100 * (end_proportion - start_proportion)
                 local timeline_start = LCD_W - 105 + start_proportion * 100
                 lcd.drawFilledRectangle(timeline_start,LCD_H-6,timeline_width,2,WHITE)
-                local selected_proportion = selected_point / n_values
+                local selected_proportion = selected_point / (n_points-1)
                 lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,crosshair_color)
             end
         end
