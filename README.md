@@ -10,9 +10,9 @@ It can also be used to
 - assess flight path consistency over multiple laps for racing and aerobatic competitions, and
 - verify that the aircraft remains within the desired airspace.
 
-Special thanks to Lee from the Painless360 Youtube channel for covering some of these use cases in more detail in [this video](https://www.youtube.com/watch?v=e8nbd5bs0Eg).
+Special thanks to Lee from the Painless360 Youtube channel for covering some of these use cases in more detail in the video below.
 
-![screenshot](images/screenshot_curve.png)
+[![Painless360 Youtube Review Video](images/review_video_thumbnail.jpg)](https://www.youtube.com/watch?v=e8nbd5bs0Eg)
 
 GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry with respect to time.
 
