@@ -321,7 +321,12 @@ local function compare_names(a, b)
 end
 
 local function drawProgress(x, y, current, total)
-    local pct = current / total
+    local pct
+    if total > 0 then
+        pct = current / total
+    else
+        pct = 0
+    end
     lcd.drawFilledRectangle(x + 1, y + 1, (470 - x - 2) * pct, 14, TEXT_INVERTED_BGCOLOR)
     lcd.drawRectangle(x, y, 470 - x, 16, TEXT_COLOR)
 end
