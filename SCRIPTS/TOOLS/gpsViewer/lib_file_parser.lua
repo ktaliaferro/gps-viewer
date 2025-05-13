@@ -6,6 +6,7 @@ M.app_name = app_name
 M.m_utils = m_utils
 
 local max_log_size_MB = m_config.max_log_size_MB
+local skip_data_check = true
 
 --function cache
 local math_floor = math.floor
@@ -39,7 +40,6 @@ end
 function M.getFileDataInfo(fileName)
     M.m_log.info("getFileDataInfo(%s)", fileName)
 
-    --local t1_model =getTime()
     local error_message = nil
 
     local hFile = io.open("/LOGS/" .. fileName, "r")
@@ -83,7 +83,6 @@ function M.getFileDataInfo(fileName)
 
     -- get header line
     local headerLine = string.sub(data1, 1, index - 1)
-    --M.m_log.info("header-line: [%s]", headerLine)
 
     -- get columns
     columns_by_header = M.m_utils.split(headerLine)
@@ -113,10 +112,34 @@ function M.getFileDataInfo(fileName)
             error_message = "no data"
             return nil, nil, nil, nil, nil, nil, nil, error_message
         end
-        --M.m_utils.timeProfilerAdd('read()', t1);
 
         -- file read done
-        if data2 == "" then
+        if data2 == "" or (skip_data_check and i > 3) then
+            
+            if skip_data_check then
+                for idxCol = 1, #columns_by_header, 1 do
+                    columns_is_have_data[idxCol] = true
+                end
+            end  
+            
+            for idxCol = 1, #columns_by_header, 1 do
+                local curr_col = columns_by_header[idxCol]
+
+                -- always hide these columns
+                local cols_to_hide = {'LSW', 'GPS', 'latitude', 'longitude'}
+                for _,col in pairs(cols_to_hide) do
+                    if curr_col == col then columns_is_have_data[idxCol] = false end
+                end
+
+                -- always show these columns
+                local cols_to_show = {'RQly', 'TQly', 'TPWR', 'RSNR', 'VFR'}
+                for _,col in pairs(cols_to_show) do
+                    -- these columns sometimes have "(%)" at the end of the column name,
+                    -- so string.find() is used here
+                    if string.find(curr_col,"^" .. col) ~= nil then columns_is_have_data[idxCol] = true end
+                end
+            end
+            
             -- done reading file
             io.close(hFile)
 
@@ -185,24 +208,6 @@ function M.getFileDataInfo(fileName)
             end
 
             idx_buff = idx_buff + string.len(line) + 1 -- dont forget the newline
-        end
-
-        for idxCol = 1, #columns_by_header, 1 do
-            local curr_col = columns_by_header[idxCol]
-
-            -- always hide these columns
-            local cols_to_hide = {'LSW', 'GPS', 'latitude', 'longitude'}
-            for _,col in pairs(cols_to_hide) do
-                if curr_col == col then columns_is_have_data[idxCol] = false end
-            end
-
-            -- always show these columns
-            local cols_to_show = {'RQly', 'TQly', 'TPWR', 'RSNR', 'VFR'}
-            for _,col in pairs(cols_to_show) do
-                -- these columns sometimes have "(%)" at the end of the column name,
-                -- so string.find() is used here
-                if string.find(curr_col,"^" .. col) ~= nil then columns_is_have_data[idxCol] = true end
-            end
         end
 
         buffer = string.sub(buffer, idx_buff + 1) -- dont forget the newline
