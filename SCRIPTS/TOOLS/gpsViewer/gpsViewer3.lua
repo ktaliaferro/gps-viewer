@@ -151,6 +151,9 @@ local map_drawn = false
 local map_draws = 0
 local start_point = 0
 local end_point = 0
+local show_indexing_times = false
+local index_times = {}
+local filenames = {}
 
 ---- #########################################################################
 
@@ -412,12 +415,27 @@ local function get_log_files_list()
     return nil
 end
 
+local function table_csv(t)
+    -- convert table values into a single csv string
+    s = ""
+    for k, v in ipairs(t) do
+        s = s .. tostring(v) .. ","
+    end
+    return s
+end
+
 local function display_indexing_status(text_color)
     local offset = 0
     if min_log_length_sec > 0 then
         offset = 20
         lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds.", files_too_short, min_log_length_sec), text_color + SMLSIZE)
     end
+    if show_indexing_times then
+        -- show indexing times for testing purposes
+        lcd.drawText(10, LCD_H-140 - offset, table_csv(filenames), text_color + SMLSIZE)
+        lcd.drawText(10, LCD_H-120 - offset, table_csv(index_times), text_color + SMLSIZE)
+    end
+    lcd.drawText(10, LCD_H-100 - offset, "Indexing takes about 2 minutes per MB.", text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-80 - offset, string.format("%d new log files indexed successfully.", files_indexed_successfully), text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-60 - offset, string.format("%d old log files already indexed.", files_already_indexed), text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB.", files_too_large, max_log_size_MB), text_color + SMLSIZE)
@@ -451,7 +469,7 @@ local function read_and_index_file_list()
                 -- draw state
                 lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
                 lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
-                lcd.drawText(5, 90, string.format("* %s", filename), TEXT_COLOR + SMLSIZE)
+                lcd.drawText(5, 90, string.format("* %s (%d KB)", filename, get_size(filename)), TEXT_COLOR + SMLSIZE)
 
                 drawProgress(160, 60, log_file_list_raw_idx - 0.5, #log_file_list_raw)
 
@@ -466,6 +484,7 @@ local function read_and_index_file_list()
             if filename ~= nil then
                 local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
                 if modelName ~= nil then
+                    local index_start_time = getTime()
                     local model_day = string.format("%s-%s-%s", year, month, day)
 
                     local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = m_index_file.getFileDataInfo(filename)
@@ -482,6 +501,9 @@ local function read_and_index_file_list()
                     log("read_and_index_file_list: total_seconds: %s", total_seconds)
                     m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
                     m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
+                    local index_time_seconds = math.floor((getTime() - index_start_time) / 100)
+                    table.insert(index_times, index_time_seconds)
+                    table.insert(filenames,string.sub(filename,1,3))
                 end
             end
             log_file_list_raw_idx = log_file_list_raw_idx + 1

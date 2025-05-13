@@ -14,7 +14,7 @@ Special thanks to Lee from the Painless360 Youtube channel for covering some of 
 
 [![Painless360 Youtube Review Video](images/review_video_thumbnail.jpg)](https://www.youtube.com/watch?v=e8nbd5bs0Eg)
 
-GPS Viewer is a modification of [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry with respect to time.
+GPS Viewer is based on [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry with respect to time.
 
 ## Installation
 
@@ -26,7 +26,7 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 To open the app, press the system button on your transmitter and select GPS Viewer.
 
-1. Select log files to index.  This step measures the duration of each log file and determines which fields have data that changes over time.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
+1. Select log files to index.  This step determines which fields have data that changes over time and takes about 2 minutes per MB.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
 
     ![screenshot](images/step_01.png)
 
@@ -62,4 +62,4 @@ To generate a 480x272 satellite image, you can use [this map generator](https://
 
 ## Log File Requirements
 
-Log files are ignored if they don't have a GPS field or are over 2 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result long load times.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
+Log files are ignored if they don't have a GPS field or are over 2 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result in long load times for large log files.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
