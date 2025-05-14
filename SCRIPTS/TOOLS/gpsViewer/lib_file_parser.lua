@@ -119,8 +119,26 @@ function M.getFileDataInfo(fileName)
         if data2 == "" then
             -- done reading file
             io.close(hFile)
+            
+            for idxCol = 1, #columns_by_header, 1 do
+                local curr_col = columns_by_header[idxCol]
 
-            -- calculate data
+                -- always hide these columns
+                local cols_to_hide = {'LSW', 'GPS', 'latitude', 'longitude'}
+                for _,col in pairs(cols_to_hide) do
+                    if curr_col == col then columns_is_have_data[idxCol] = false end
+                end
+
+                -- always show these columns
+                local cols_to_show = {'RQly', 'TQly', 'TPWR', 'RSNR', 'VFR'}
+                for _,col in pairs(cols_to_show) do
+                    -- these columns sometimes have "(%)" at the end of the column name,
+                    -- so string.find() is used here
+                    if string.find(curr_col,"^" .. col) ~= nil then columns_is_have_data[idxCol] = true end
+                end
+            end
+
+            -- calculate metadata
             local first_time_sec = M.getTotalSeconds(start_time)
             local last_time_sec = M.getTotalSeconds(end_time)
             local total_seconds = last_time_sec - first_time_sec
@@ -128,8 +146,9 @@ function M.getFileDataInfo(fileName)
 
             for idxCol = 1, #columns_by_header do
                 local col_name = columns_by_header[idxCol]
-                col_name = string_gsub(col_name, "\n", "")
-                col_name = M.m_utils.trim_safe(col_name)
+                col_name = string_gsub(col_name, "\n", "") -- remove newline
+                col_name = M.m_utils.trim_safe(col_name) -- remove leading and trailing whitespace
+                -- populate columns_with_data and col_with_data_str
                 if columns_is_have_data[idxCol] == true and col_name ~= "Date" and col_name ~= "Time" then
                     columns_with_data[#columns_with_data + 1] = col_name
                     if string_len(col_with_data_str) == 0 then
@@ -139,6 +158,7 @@ function M.getFileDataInfo(fileName)
                     end
                 end
 
+                -- populate all_col_str
                 if string_len(all_col_str) == 0 then
                     all_col_str = col_name
                 else
@@ -151,7 +171,8 @@ function M.getFileDataInfo(fileName)
             end
             return start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message
         end
-
+        
+        -- continue parsing log file
         buffer = buffer .. data2
         local idx_buff = 0
 
@@ -159,7 +180,6 @@ function M.getFileDataInfo(fileName)
         for line in line_list do
             total_lines = total_lines + 1
             local time = string.sub(line, 12, 19)
-            --M.m_log.info("getFileDataInfo: %d. time: %s", total_lines, time)
             if start_time == nil then
                 start_time = time
             end
@@ -184,32 +204,16 @@ function M.getFileDataInfo(fileName)
                 end
             end
 
+            -- compute the number of characters read from the buffer
             idx_buff = idx_buff + string.len(line) + 1 -- dont forget the newline
         end
 
-        for idxCol = 1, #columns_by_header, 1 do
-            local curr_col = columns_by_header[idxCol]
-
-            -- always hide these columns
-            local cols_to_hide = {'LSW', 'GPS', 'latitude', 'longitude'}
-            for _,col in pairs(cols_to_hide) do
-                if curr_col == col then columns_is_have_data[idxCol] = false end
-            end
-
-            -- always show these columns
-            local cols_to_show = {'RQly', 'TQly', 'TPWR', 'RSNR', 'VFR'}
-            for _,col in pairs(cols_to_show) do
-                -- these columns sometimes have "(%)" at the end of the column name,
-                -- so string.find() is used here
-                if string.find(curr_col,"^" .. col) ~= nil then columns_is_have_data[idxCol] = true end
-            end
-        end
-
+        -- remove read characters from the buffer
+        -- so that what remains is a single partial line
         buffer = string.sub(buffer, idx_buff + 1) -- dont forget the newline
     end
 
     io.close(hFile)
-
     M.m_log.info("File too large, file: %s", fileName)
     error_message = "too large"
     return nil, nil, nil, nil, nil, nil, nil, error_message
