@@ -47,6 +47,9 @@ local function updateFile(file_name, start_time, end_time, total_seconds, total_
         all_col_str = m_utils.trim(all_col_str)
     }
     M.m_tables.list_ordered_insert(M.log_files_index_info, new_file, M.compare_file_names_inc, 1)
+    
+    -- also store with file names as keys for quick searching
+    M.indexed_filenames[file_name] = true
 end
 
 function M.indexPrint(prefix)
@@ -130,7 +133,6 @@ function M.indexRead()
             if files_on_disk[file_name] == "OK" then
                 --m_log.info("files_on_disk exist: %s", file_name)
                 updateFile(file_name, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str)
-                M.indexed_filenames[file_name] = true
                 -- save model names and dates for filtering
                 local modelName, year, month, day, hour, min, sec, m, d, y = string.match(file_name, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
                 local model_day = string.format("%s-%s-%s", year, month, day)
@@ -152,38 +154,48 @@ end
 
 function M.getFileDataInfo(file_name)
     
-    local is_new = nil
+    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB
 
     -- if the file is in the index, return the info from the index
-    for i = 1, #M.log_files_index_info do
-        local f_info = M.log_files_index_info[i]
-        if file_name == f_info.file_name then
-            is_new = false
-            return is_new, f_info.start_time, f_info.end_time, f_info.total_seconds, f_info.total_lines, f_info.start_index, f_info.col_with_data_str, f_info.all_col_str, nil
+    if M.indexed_filenames[file_name] == true then
+        for i = 1, #M.log_files_index_info do
+            local f_info = M.log_files_index_info[i]
+            if file_name == f_info.file_name then
+                is_new = false
+                error_message = nil
+                index_done = true
+                index_progress = 1
+                return is_new, f_info.start_time, f_info.end_time, f_info.total_seconds, f_info.total_lines, f_info.start_index, f_info.col_with_data_str, f_info.all_col_str, error_message, index_done, index_progress, index_size_KB
+            end
         end
     end
 
     M.m_log.info("getFileDataInfo: file not in index, indexing... %s", file_name)
 
     -- if the file is not in the index, read the file and compute metadata
-    local start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = M.m_lib_file_parser.getFileDataInfo(file_name)
+    start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB = M.m_lib_file_parser.getFileDataInfo(file_name)
 
+    -- if there is an error message, then return it
     if error_message ~= nil then
-        return is_new, nil, nil, nil, nil, nil, nil, nil, error_message
+        return is_new, nil, nil, nil, nil, nil, nil, nil, error_message, index_done, index_progress, index_size_KB
     end
 
-    -- add the file to the index
-    updateFile(
-        file_name,
-        start_time, end_time, total_seconds,
-        total_lines,
-        start_index,
-        col_with_data_str,
-        all_col_str)
-
-    M.indexSave()
     is_new = true
-    return is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message
+    -- if indexing is done, then add the file to the index
+    if index_done then
+        -- add the file to the index
+        updateFile(
+            file_name,
+            start_time, end_time, total_seconds,
+            total_lines,
+            start_index,
+            col_with_data_str,
+            all_col_str)
+
+        -- return file metadata
+        M.indexSave()
+    end
+    return is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB
 end
 
 function M.getFileListDec()

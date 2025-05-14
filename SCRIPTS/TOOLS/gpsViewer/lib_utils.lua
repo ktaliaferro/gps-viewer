@@ -149,5 +149,36 @@ function M.timeProfilerShow(is_now)
 end
 -----------------------------------------------------------------
 
+function M.larger(file,size_KB)
+    -- determine if file is larger than size_KB
+    io.seek(file, size_KB * 1024)
+    s = io.read(file, 1)
+    return string.len(s) > 0
+end
+
+function M.get_size(filename)
+    if filename == nil then
+        return 0
+    end
+    -- compute file size in KB using binary search
+    local file = io.open("/LOGS/" .. filename, "r")
+    local size_upper_limit = 1
+    while M.larger(file,size_upper_limit) do
+        size_upper_limit = size_upper_limit * 2
+    end
+    local size_lower_limit = 0
+    local midpoint = nil
+    while size_upper_limit - size_lower_limit > 2 do
+        local midpoint = math.floor((size_upper_limit + size_lower_limit) * .5)
+        if M.larger(file,midpoint) then
+            size_lower_limit = midpoint
+        else
+            size_upper_limit = midpoint
+        end
+    end
+    io.close(file)
+    return size_upper_limit
+end
+
 M.prof = M.timeProfilerInit()
 return M

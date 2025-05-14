@@ -26,7 +26,7 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 To open the app, press the system button on your transmitter and select GPS Viewer.
 
-1. Select log files to index.  This step determines which fields have data that changes over time and takes about 2 minutes per MB.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
+1. Select log files to index.  This step determines which fields have data that changes over time and takes about one minute per MB.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
 
     ![screenshot](images/step_01.png)
 

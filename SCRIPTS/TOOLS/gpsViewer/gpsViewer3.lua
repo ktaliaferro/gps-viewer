@@ -115,6 +115,7 @@ local skipLines = 0
 local lines = 0
 local index = 0
 local buffer = ""
+local index_start_time
 
 local sensorSelection = {
     { y = 80, label = "Field 1", values = {}, idx = 1, colId = 0, min = 0 },
@@ -171,34 +172,6 @@ local function log(fmt, ...)
     m_log.info(fmt, ...)
 end
 --------------------------------------------------------------
-
-local function larger(file,size_KB)
-    -- determine if file is larger than size_KB
-    io.seek(file, size_KB * 1024)
-    s = io.read(file, 1)
-    return string.len(s) > 0
-end
-
-local function get_size(filename)
-    -- compute file size in KB using binary search
-    local file = io.open("/LOGS/" .. filename, "r")
-    local size_upper_limit = 1
-    while larger(file,size_upper_limit) do
-        size_upper_limit = size_upper_limit * 2
-    end
-    local size_lower_limit = 0
-    local midpoint = nil
-    while size_upper_limit - size_lower_limit > 2 do
-        local midpoint = math.floor((size_upper_limit + size_lower_limit) * .5)
-        if larger(file,midpoint) then
-            size_lower_limit = midpoint
-        else
-            size_upper_limit = midpoint
-        end
-    end
-    io.close(file)
-    return size_upper_limit
-end
 
 local function toDuration(totalSeconds)
     local hours = math_floor(totalSeconds / 3600)
@@ -432,10 +405,9 @@ local function display_indexing_status(text_color)
     end
     if show_indexing_times then
         -- show indexing times for testing purposes
-        lcd.drawText(10, LCD_H-140 - offset, table_csv(filenames), text_color + SMLSIZE)
-        lcd.drawText(10, LCD_H-120 - offset, table_csv(index_times), text_color + SMLSIZE)
+        lcd.drawText(10, LCD_H-120 - offset, table_csv(filenames), text_color + SMLSIZE)
+        lcd.drawText(10, LCD_H-100 - offset, table_csv(index_times), text_color + SMLSIZE)
     end
-    lcd.drawText(10, LCD_H-100 - offset, "Indexing takes about 2 minutes per MB.", text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-80 - offset, string.format("%d new log files indexed successfully.", files_indexed_successfully), text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-60 - offset, string.format("%d old log files already indexed.", files_already_indexed), text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB.", files_too_large, max_log_size_MB), text_color + SMLSIZE)
@@ -445,6 +417,7 @@ end
 
 local function read_and_index_file_list()
 
+    -- the first time that this function is called, do the following
     if (#log_file_list_raw == 0) then
         log("read_and_index_file_list: init")
         m_index_file.indexInit()
@@ -455,62 +428,62 @@ local function read_and_index_file_list()
         -- check logs folder to get list of log files that aren't already indexed
         log_file_list_raw = get_log_files_list()
         log_file_list_raw_idx = 1
+        
+        index_start_time = getTime()
     end
  
     -- index files in the table log_file_list_raw that aren't already indexed
-    while log_file_list_raw_idx <= #log_file_list_raw do
-        filename = log_file_list_raw[log_file_list_raw_idx]
-        if gui_drawn == false then
-            -- Draw the GUI in a separate execution of the run function.
-            -- Otherwise, the GUI will be blank while the first file is indexing.
-            if filename ~= nil then
-                drawMain()
-
-                -- draw state
-                lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
-                lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
-                lcd.drawText(5, 90, string.format("* %s (%d KB)", filename, get_size(filename)), TEXT_COLOR + SMLSIZE)
-
-                drawProgress(160, 60, log_file_list_raw_idx - 0.5, #log_file_list_raw)
-
-                log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
-                
-                display_indexing_status(TEXT_COLOR)
-            end
-            gui_drawn = true
-            return false
-        else
-            -- index the log file if it is not already in the index
-            if filename ~= nil then
-                local modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
-                if modelName ~= nil then
-                    local index_start_time = getTime()
-                    local model_day = string.format("%s-%s-%s", year, month, day)
-
-                    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message = m_index_file.getFileDataInfo(filename)
-                    
-                    if error_message == nil then
-                        if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
-                        if not is_new then files_already_indexed = files_already_indexed + 1 end
-                    else
-                        if error_message == "too large" then files_too_large = files_too_large  + 1 end
-                        if error_message == "without GPS column" then files_without_gps = files_without_gps + 1 end
-                    end
-                    if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
+    if log_file_list_raw_idx > #log_file_list_raw then
+        return true
+    end
+    filename = log_file_list_raw[log_file_list_raw_idx]
+    local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB
+    local modelName, year, month, day, hour, min, sec, m, d, y
+    if filename ~= nil then
+        modelName, year, month, day, hour, min, sec, m, d, y = string.match(filename, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$") 
         
-                    log("read_and_index_file_list: total_seconds: %s", total_seconds)
-                    m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
-                    m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
-                    local index_time_seconds = math.floor((getTime() - index_start_time) / 100)
-                    table.insert(index_times, index_time_seconds)
-                    table.insert(filenames,string.sub(filename,1,3))
+        if modelName ~= nil then
+            is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB = m_index_file.getFileDataInfo(filename)          
+            if index_done then
+                if error_message == nil then
+                    if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
+                    if not is_new then files_already_indexed = files_already_indexed + 1 end
+                else
+                    if error_message == "too large" then files_too_large = files_too_large  + 1 end
+                    if error_message == "no GPS column" then files_without_gps = files_without_gps + 1 end
                 end
+                if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
+
+                log("read_and_index_file_list: total_seconds: %s", total_seconds)
+                m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
+                local model_day = string.format("%s-%s-%s", year, month, day)
+                m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
+                local index_time_seconds = math.floor((getTime() - index_start_time) / 100)
+                table.insert(index_times, index_time_seconds)
+                table.insert(filenames,string.sub(filename,1,3))
             end
-            log_file_list_raw_idx = log_file_list_raw_idx + 1
-            gui_drawn = false
+            
+            -- draw GUI
+            drawMain()
+            lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
+            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
+            if index_size_KB == nil
+                then index_size_KB = 0
+            end
+            lcd.drawText(5, 90, string.format("* %s (%d KB / %d KB)", filename, math.floor(index_progress * index_size_KB), index_size_KB), TEXT_COLOR + SMLSIZE)
+            drawProgress(160, 60, log_file_list_raw_idx - 1 + index_progress, #log_file_list_raw)
+            log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
+            display_indexing_status(TEXT_COLOR)
         end
     end
-    return true
+
+
+    if filename == nil or modelName == nil or index_done then
+        log_file_list_raw_idx = log_file_list_raw_idx + 1
+        index_start_time = getTime() -- reset start time
+    end
+
+    return false
 end
 
 local function onLogFileChange(obj)
@@ -595,7 +568,7 @@ local function filter_log_file_list(filter_model_name, filter_date, need_update)
         -- prepare list with friendly names
         for i=1, #log_file_list_filtered do
             -- get duration
-            local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(log_file_list_filtered[i])
+            local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str, error_message, index_done, index_progress, index_size_KB = m_index_file.getFileDataInfo(log_file_list_filtered[i])
             log_file_list_filtered2[#log_file_list_filtered2 +1] = string.format("%s (%.0fmin)", log_file_list_filtered[i], total_seconds/60)
         end
     end
@@ -905,7 +878,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     sensorSelection[4].colId = get_key(columns_by_header, "longitude")
     sensorSelection[4].idx = FIRST_VALID_COL
 
-    log_size_KB = get_size(filename)
+    log_size_KB = m_utils.get_size(filename)
     logging_interval =  current_session.total_seconds / (current_session.total_lines - 1)
 
     state = STATE.SELECT_SENSORS
