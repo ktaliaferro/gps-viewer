@@ -5,6 +5,10 @@ M.m_log = m_log
 M.app_name = app_name
 M.m_utils = m_utils
 
+-- configuration
+local heap_index = 32 * 1024 -- number of bytes to index at a time
+
+-- configuration imported from lib_config.lua
 local max_log_size_MB = m_config.max_log_size_MB
 
 --function cache
@@ -129,8 +133,7 @@ function M.getFileDataInfo(fileName)
     end
 
     index_i = index_i + 1
-    local heap_KB = 8
-    local data2 = io.read(index_file, 1024 * heap_KB)
+    local data2 = io.read(index_file, heap_index)
 
     -- file read done
     if data2 == "" then
@@ -237,7 +240,7 @@ function M.getFileDataInfo(fileName)
     buffer = string.sub(buffer, idx_buff + 1) -- dont forget the newline
 
     index_done = false
-    index_progress = math.min((start_index + (index_i-1) * 1024 * heap_KB) / (index_size_KB * 1024), 1)
+    index_progress = math.min((start_index + (index_i-1) * heap_index) / (index_size_KB * 1024), 1)
     return nil, nil, nil, nil, nil, nil, nil, error_message, index_done, index_progress, index_size_KB
 end
 

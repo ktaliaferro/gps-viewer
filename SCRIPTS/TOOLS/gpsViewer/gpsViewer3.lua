@@ -26,8 +26,19 @@ function M.getVer()
     return app_ver
 end
 
-local maps = m_config.maps
+-- configuration
 local crosshair_color = GREEN
+local blank_map_color = DARKGREEN
+local selected_point_size = 4 -- point diameter in pixels
+local max_points_draw = 500 -- maximum number of points to draw on the map
+local max_points_memory = 2000 -- maximum number of points to store in memory
+local show_indexing_times = false -- show indexing times for load testing purposes
+local heap_parse = 64 * 1024 -- number of bytes to parse at a time
+
+-- configuration imported from lib_config.lua
+local maps = m_config.maps
+local min_log_length_sec = m_config.min_log_length_sec
+local max_log_size_MB = m_config.max_log_size_MB
 
 --function cache
 local math_floor = math.floor
@@ -39,22 +50,18 @@ local string_sub = string.sub
 local string_char = string.char
 local string_byte = string.byte
 
-local heap = 2048
-local hFile
-local min_log_length_sec = m_config.min_log_length_sec
-local max_log_size_MB = m_config.max_log_size_MB
 
+local hFile
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
+local log_size_KB = nil
+local logging_interval = nil
 
 local files_indexed_successfully = 0
 local files_already_indexed = 0
 local files_too_large = 0
 local files_without_gps = 0
 local files_too_short = 0
-
-local log_size_KB = nil
-local logging_interval = nil
 
 local log_file_list_filtered = {}
 local log_file_list_filtered2 = {}
@@ -133,9 +140,6 @@ local selected_map = 1
 
 local styles = {"Curve", "Points"}
 local selected_style=1
-local selected_point_size = 4 -- point diameter in pixels
-local max_points_draw = 500 -- maximum number of points to draw on the map
-local max_points_memory = 2000 -- maximum number of points to store in memory
 
 -- Instantiate a new GUI object
 local ctx1 = m_libgui.newGUI()
@@ -152,7 +156,6 @@ local map_drawn = false
 local map_draws = 0
 local start_point = 0
 local end_point = 0
-local show_indexing_times = false
 local index_times = {}
 local filenames = {}
 
@@ -241,7 +244,7 @@ local function collectData()
         end
     end
 
-    local read = io.read(hFile, heap)
+    local read = io.read(hFile, heap_parse)
     if read == "" then
         io.close(hFile)
         hFile = nil
@@ -283,7 +286,7 @@ local function collectData()
     end
 
     buffer = string.sub(buffer, i + 1) --dont forget the newline ;
-    index = index + heap
+    index = index + heap_parse
     io.seek(hFile, index)
     return false
 end
@@ -721,7 +724,6 @@ local function state_SELECT_FILE_refresh(event, touchState)
         log("Reset file load data")
         buffer = ""
         lines = 0
-        heap = 2048 * 12
 
         local is_new, start_time, end_time, total_seconds, total_lines, start_index, col_with_data_str, all_col_str = m_index_file.getFileDataInfo(filename)
 
@@ -1192,7 +1194,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     -- Limiting redraws makes the app more responsive to stick inputs.
     if map_drawn == false or selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old or selected_style ~= selected_style_old then
         -- draw map background
-        lcd.clear(DARKGREEN)
+        lcd.clear(blank_map_color)
         if maps[selected_map]["path"] ~= nil then
             if maps[selected_map]["image"] == nil then
                 maps[selected_map]["image"] = Bitmap.open(maps[selected_map]["path"])

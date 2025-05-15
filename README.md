@@ -7,8 +7,9 @@ GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter that lets user
 It can also be used to
 - tune radio antenna alignment,
 - assess GPS data accuracy before using it for autonomous flight,
-- assess flight path consistency over multiple laps for racing and aerobatic competitions, and
-- verify that the aircraft remains within the desired airspace.
+- assess flight path consistency over multiple laps for racing and aerobatic competitions,
+- verify that the aircraft remains within the desired airspace,
+- and locate crashed aircraft.
 
 Special thanks to Lee from the Painless360 Youtube channel for covering some of these use cases in more detail in the video below.
 
@@ -26,7 +27,7 @@ Optionally copy the `LOGS` directory to your transmitter if you'd like to have a
 
 To open the app, press the system button on your transmitter and select GPS Viewer.
 
-1. Select log files to index.  This step determines which fields have data that changes over time and takes about one minute per MB.  Invalid log files are ignored as described in the [Log File Requirements](#log-file-requirements) section below.
+1. Select log files to index.  This step determines which fields have data that changes over time and takes about 30 seconds per MB.  To keep log files small and indexing fast, it is recommended to use a logging interval of at least 1 second in EdgeTX.
 
     ![screenshot](images/step_01.png)
 
@@ -59,7 +60,3 @@ For flights at your local airfield, you can either use the included blank map (s
 ![screenshot](images/blank_map.png)
 
 To generate a 480x272 satellite image, you can use [this map generator](https://ethosmap.hobby4life.nl/).  Alternatively, you can use [Google Maps](https://www.google.com/maps), take a screenshot, and manually crop and resize it using a free image editing program like [Gimp](https://www.gimp.org/).
-
-## Log File Requirements
-
-Log files are ignored if they don't have a GPS field or are over 4 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result in long indexing times for large log files.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
