@@ -867,8 +867,14 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
         end
     )
     
+    log_size_KB = m_utils.get_size(filename)
+    local default_granularity
+    if log_size_KB > 2 * 1024 then default_granularity = 3
+    elseif log_size_KB > 1 * 1024 then default_granularity = 2
+    else default_granularity = 1 end
+    
     ctx2.label(10, 130, 60+10, 24, "Granularity")
-    dd4 = ctx2.dropDown(90+10, 130, 380-10, 24, accuracy_list, 1, onAccuracyChange)
+    dd4 = ctx2.dropDown(90+10, 130, 380-10, 24, accuracy_list, default_granularity, onAccuracyChange)
     onAccuracyChange(dd4)
 
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
@@ -878,7 +884,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     sensorSelection[4].colId = get_key(columns_by_header, "longitude")
     sensorSelection[4].idx = FIRST_VALID_COL
 
-    log_size_KB = m_utils.get_size(filename)
+    
     logging_interval =  current_session.total_seconds / (current_session.total_lines - 1)
 
     state = STATE.SELECT_SENSORS

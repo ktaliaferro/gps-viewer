@@ -34,7 +34,7 @@ To open the app, press the system button on your transmitter and select GPS View
 
     ![screenshot](images/step_02.png)
 
-3. Select fields to plot, a map to plot on, and the granularity.  Fields with data that doesn't change over time are excluded.  For large log files, it is recommended to use a low granularity.  This will plot fewer data points and make the sticks more responsive in step 4 below.
+3. Select fields to plot, a map to plot on, and the granularity.  Fields with data that doesn't change over time are excluded.  For log files larger than 1 MB, it is recommended to use a low granularity.  This will plot fewer data points and make the sticks more responsive in step 4 below.
 
     ![screenshot](images/step_03.png)
 
@@ -62,4 +62,4 @@ To generate a 480x272 satellite image, you can use [this map generator](https://
 
 ## Log File Requirements
 
-Log files are ignored if they don't have a GPS field or are over 2 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result in long load times for large log files.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
+Log files are ignored if they don't have a GPS field or are over 4 MB in size.  The size limit can be increased by editing [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua), but this will result in long load times for large log files.  Instead, it is recommended to keep log files small by using a logging frequency of 1 Hz or less in EdgeTX.
