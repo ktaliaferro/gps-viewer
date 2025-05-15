@@ -79,6 +79,7 @@ local columns_by_header = {}
 local columns_with_data = {}
 local current_session = nil
 local FIRST_VALID_COL = 2
+local gpsID
 
 -- state machine
 local STATE = {
@@ -247,7 +248,6 @@ local function collectData()
 
     buffer = buffer .. read
     local i = 0
-    local gpsID = get_key(columns_by_header,"GPS")
 
     for line in string_gmatch(buffer, "([^\n]+)\n") do
         if math.fmod(lines, skipLines) == 0 then
@@ -773,6 +773,7 @@ local function state_SELECT_FILE_refresh(event, touchState)
             local col = columns_temp[i]
             columns_by_header[#columns_by_header + 1] = col
         end
+        gpsID = get_key(columns_by_header,"GPS")
 
         state = STATE.SELECT_SENSORS_INIT
         return 0
