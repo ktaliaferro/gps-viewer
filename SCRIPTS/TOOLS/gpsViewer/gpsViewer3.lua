@@ -64,7 +64,6 @@ local filter_date
 local filter_date_idx = 1
 local model_name_list
 local date_list
-local accuracy_list = { "1/1 (read every line)", "1/2 (every 2nd line)", "1/5 (every 5th line)", "1/10 (every 10th line)" }
 local ddModel = nil
 local ddLogFile = nil -- log-file dropDown object
 local ddIndexType = nil
@@ -112,7 +111,7 @@ local conversionSensorProgress = 0
 
 --File reading data
 local valPos = 0
-local skipLines = 0
+local skip_lines
 local lines = 0
 local index = 0
 local buffer = ""
@@ -125,8 +124,6 @@ local sensorSelection = {
     { y = 155, label = "Field 4", values = {}, idx = 1, colId = 0, min = 0 }
 }
 
-local gui_drawn = false
-
 map_names = {}
 for i=1, #maps, 1 do
     map_names[i]=maps[i]["name"]
@@ -136,7 +133,9 @@ local selected_map = 1
 
 local styles = {"Curve", "Points"}
 local selected_style=1
-local selected_point_size = 4
+local selected_point_size = 4 -- point diameter in pixels
+local max_points_draw = 500 -- maximum number of points to draw on the map
+local max_points_memory = 2000 -- maximum number of points to store in memory
 
 -- Instantiate a new GUI object
 local ctx1 = m_libgui.newGUI()
@@ -217,6 +216,7 @@ local function drawMain()
 end
 
 local function collectData()
+    
     if hFile == nil then
         buffer = ""
         hFile = io.open("/LOGS/" .. filename, "r")
@@ -225,6 +225,8 @@ local function collectData()
 
         valPos = 0
         lines = 0
+        
+        skip_lines = math.max(math.ceil(current_session.total_lines / max_points_memory), 1)
         
         log(string.format("current_session.total_lines: %d", current_session.total_lines))
 
@@ -250,7 +252,7 @@ local function collectData()
     local i = 0
 
     for line in string_gmatch(buffer, "([^\n]+)\n") do
-        if math.fmod(lines, skipLines) == 0 then
+        if lines % skip_lines == 0 then
             local vals = m_utils.split(line)
 
             for varIndex = 1, 4, 1 do
@@ -493,26 +495,6 @@ local function onLogFileChange(obj)
     log("Selected file index: %d", i)
     log("Selected file: %s", log_file_list_filtered[i])
     filename_idx = i
-end
-
-local function onAccuracyChange(obj)
-    local i = obj.selected
-    local accuracy = i
-    log("Selected accuracy: %s (%d)", accuracy_list[i], i)
-
-    if accuracy == 4 then
-        skipLines = 10
-        heap = 2048 * 16
-    elseif accuracy == 3 then
-        skipLines = 5
-        heap = 2048 * 16
-    elseif accuracy == 2 then
-        skipLines = 2
-        heap = 2048 * 8
-    else
-        skipLines = 1
-        heap = 2048 * 4
-    end
 end
 
 local function filter_log_file_list(filter_model_name, filter_date, need_update)
@@ -869,14 +851,6 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     )
     
     log_size_KB = m_utils.get_size(filename)
-    local default_granularity
-    if log_size_KB > 2 * 1024 then default_granularity = 3
-    elseif log_size_KB > 1 * 1024 then default_granularity = 2
-    else default_granularity = 1 end
-    
-    ctx2.label(10, 130, 60+10, 24, "Granularity")
-    dd4 = ctx2.dropDown(90+10, 130, 380-10, 24, accuracy_list, default_granularity, onAccuracyChange)
-    onAccuracyChange(dd4)
 
     sensorSelection[1].colId = colWithData2ColByHeader(sensorSelection[1].idx)
     sensorSelection[2].colId = colWithData2ColByHeader(sensorSelection[2].idx)
@@ -1241,48 +1215,55 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
             local n_gps_values = 0 -- number of points with valid GPS data
             local n_map_values = 0 -- number of points with GPS data that is on the selected map
 
+            local selected_points = end_point - start_point + 1
+            local skip_points = math.max(math.ceil(selected_points / max_points_draw), 1)
+            
             if styles[selected_style] ==  "Curve" then
                 -- draw curve using line segments
                 for i = start_point, end_point, 1 do
-                    if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
-                        if n_gps_values > 0 then
-                            -- save previous point for the beginning of the line segment
-                            x_old = x
-                            y_old = y
-                        end
-                        -- compute new point for the end of the line segment
-                        x = (_values[long_index][i] - long_min) / dx * LCD_W
-                        y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
-                        z = (_values[telemetry_index][i] - tele_min) / dt * 255
-                        if x >= 0 and x <= LCD_W
-                                and y >= 0 and y <= LCD_H
-                                and z >= 0 and z <= 255 then
-                            n_map_values = n_map_values + 1
-                            if n_gps_values > 0
-                                    and x_old >= 0 and x_old <= LCD_W
-                                    and y_old >= 0 and y_old <= LCD_H then
-                                local c = lcd.RGB(250,z,z)
-                                lcd.drawLine(x_old,y_old,x,y,SOLID,c)
+                    if i % skip_points == 0 or i == selected_point then  
+                        if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
+                            if n_gps_values > 0 then
+                                -- save previous point for the beginning of the line segment
+                                x_old = x
+                                y_old = y
                             end
+                            -- compute new point for the end of the line segment
+                            x = (_values[long_index][i] - long_min) / dx * LCD_W
+                            y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
+                            z = (_values[telemetry_index][i] - tele_min) / dt * 255
+                            if x >= 0 and x <= LCD_W
+                                    and y >= 0 and y <= LCD_H
+                                    and z >= 0 and z <= 255 then
+                                n_map_values = n_map_values + 1
+                                if n_gps_values > 0
+                                        and x_old >= 0 and x_old <= LCD_W
+                                        and y_old >= 0 and y_old <= LCD_H then
+                                    local c = lcd.RGB(250,z,z)
+                                    lcd.drawLine(x_old,y_old,x,y,SOLID,c)
+                                end
+                            end
+                            n_gps_values = n_gps_values + 1
                         end
-                        n_gps_values = n_gps_values + 1
                     end
                 end
             elseif styles[selected_style] ==  "Points" then
-                -- draw points using rectangles 
+                -- draw points using rectangles
                 for i = start_point, end_point, 1 do
-                    if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
-                        x = (_values[long_index][i] - long_min) / dx * LCD_W
-                        y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
-                        z = (_values[telemetry_index][i] - tele_min) / dt * 255
-                        if x >= 0 and x <= LCD_W
-                                and y >= 0 and y <= LCD_H
-                                and z >= 0 and z <= 255 then
-                            local c = lcd.RGB(255,z,z)
-                            lcd.drawFilledRectangle(x,y,selected_point_size,selected_point_size,c)
-                            n_map_values = n_map_values + 1
+                    if i % skip_points == 0 or i == selected_point then
+                        if _values[long_index][i] ~= nil and _values[lat_index][i] ~= nil and _values[telemetry_index][i] ~= nil then
+                            x = (_values[long_index][i] - long_min) / dx * LCD_W
+                            y = LCD_H - (_values[lat_index][i] - lat_min) / dy * LCD_H
+                            z = (_values[telemetry_index][i] - tele_min) / dt * 255
+                            if x >= 0 and x <= LCD_W
+                                    and y >= 0 and y <= LCD_H
+                                    and z >= 0 and z <= 255 then
+                                local c = lcd.RGB(255,z,z)
+                                lcd.drawFilledRectangle(x,y,selected_point_size,selected_point_size,c)
+                                n_map_values = n_map_values + 1
+                            end
+                            n_gps_values = n_gps_values + 1
                         end
-                        n_gps_values = n_gps_values + 1
                     end
                 end
             end
