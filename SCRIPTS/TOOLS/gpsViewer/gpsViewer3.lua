@@ -1078,7 +1078,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     
     local n_points = valPos
     -- Note that n_points will be significantly smaller than
-    -- current_session.total_lines if skipLines > 1.
+    -- current_session.total_lines if skip_lines > 1.
     
     local lat_index = 3
     local long_index = 4

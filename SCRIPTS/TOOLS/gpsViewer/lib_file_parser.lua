@@ -170,6 +170,10 @@ function M.getFileDataInfo(fileName)
         local first_time_sec = M.getTotalSeconds(start_time)
         local last_time_sec = M.getTotalSeconds(end_time)
         local total_seconds = last_time_sec - first_time_sec
+        if total_seconds < 0 then
+            -- the flight ended on the next day
+            total_seconds = total_seconds + 60 * 60 * 24
+        end
         M.m_log.info("parser:getFileDataInfo: done - [%s] lines: %d, duration: %dsec", fileName, total_lines, total_seconds)
 
         for idxCol = 1, #columns_by_header do
@@ -212,7 +216,7 @@ function M.getFileDataInfo(fileName)
         end
         end_time = time
         local vals = M.m_utils.split(line) -- hot
-
+        
         if sample_col_data == nil then
             sample_col_data = vals
             for idxCol = 1, #columns_by_header, 1 do
