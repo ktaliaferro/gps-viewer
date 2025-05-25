@@ -1042,19 +1042,10 @@ local function blank_map_boundary(points_long_min, points_long_max, points_lat_m
     -- compute width and center of data points
     local height = points_lat_max - points_lat_min
     local width = points_long_max - points_long_min
-    local center_x, center_y
-    if height <= 0 then
-        height = 1 -- avoid division by zero if height == 0
-        center_y = points_lat_min
-    else
-        center_y = points_lat_min + height / 2
-    end 
-    if width <= 0 then
-        width = 1 -- avoid division by zero if width = 0
-        center_x = points_long_min
-    else
-        center_x = points_long_min + width / 2
-    end 
+    local center_y = points_lat_min + height / 2
+    local center_x = points_long_min + width / 2
+    if height <= 0 then height = 0.0001 end -- avoid division by zero if height == 0
+    if width <= 0 then width = 0.0001 end -- avoid division by zero if width = 0
 
     -- add padding on each side
     local padding = 0.1
@@ -1064,12 +1055,12 @@ local function blank_map_boundary(points_long_min, points_long_max, points_lat_m
     -- account for the fact that longitude lines get closer as you move away from the equator
     local longitude_scaling_factor = math.sin((90-points_lat_max)*math.pi/180)
     local desired_height_width_ratio = LCD_H * longitude_scaling_factor / LCD_W
-
     if height / width < desired_height_width_ratio then
         height = width * desired_height_width_ratio
     else
         width = height / desired_height_width_ratio
     end
+    
     local map_long_min = center_x - width / 2
     local map_long_max = center_x + width / 2
     local map_lat_min = center_y - height / 2
