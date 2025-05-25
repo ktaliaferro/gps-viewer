@@ -22,12 +22,8 @@ M.maps = {
       long_max = -97.5870,
       lat_min = 30.3154,
       lat_max = 30.3306
-    },
-    {
-      -- plot flights at any location on a dark green background
-      -- long_min, long_max, lat_min, and lat_max are computed automatically
-      name = "Blank"
     }
+    -- add your own maps here
 }
 
 return M

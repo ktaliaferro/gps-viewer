@@ -40,6 +40,7 @@ local show_map_draw_count = false -- show map draw count for testing purposes
 
 -- configuration imported from lib_config.lua
 local maps = m_config.maps
+table.insert(maps,{name="Blank"})
 local min_log_length_sec = m_config.min_log_length_sec
 local max_log_size_MB = m_config.max_log_size_MB
 
@@ -157,6 +158,9 @@ local lat_index = 3
 local long_index = 4
 local telemetry_index = 1
 local show_ui = 0
+local show_help = false
+local show_boxes = true
+local show_crosshairs = true
 local map_drawn = false
 local map_draws = 0
 local start_point = 0
@@ -1174,7 +1178,7 @@ local function draw_map()
         lcd.drawText( 80, 130, "GPS Data Outside Map", DBLSIZE + RED)
     end
 
-    if show_ui == 0 or show_ui == 1 or show_ui == 2 then
+    if show_crosshairs then
         -- draw crosshairs on selected point
         if _values[long_index][selected_point] ~= nil and _values[lat_index][selected_point] ~= nil then
             x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
@@ -1188,7 +1192,7 @@ local function draw_map()
         end
     end
     
-    if show_ui == 0 or show_ui == 1 then
+    if show_boxes then
         -- draw telemetry of selected point
         lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
         lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_points-1)), WHITE + SMLSIZE)
@@ -1249,12 +1253,12 @@ local function draw_map()
 end
 
 local function draw_help()
-    if show_ui == 0 then
+    if show_boxes and not show_help then
         local box_width = 160
         local box_height = 20
         lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
         lcd.drawText(LCD_W-box_width+5,0,"press next page: show help", WHITE + SMLSIZE)
-    elseif show_ui == 1 then
+    elseif show_help then
         local box_width = 220
         local box_height = 160
         lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
@@ -1354,6 +1358,26 @@ local function parse_user_input_for_map(event, touchState)
     -- press next page to toggle the UI
     if event == EVT_VIRTUAL_NEXT_PAGE then
         show_ui = (show_ui + 1) % 4
+    end
+    
+    if show_ui ~= show_ui_old then
+        if show_ui == 0 then
+            show_help = false
+            show_boxes = true
+            show_crosshairs = true
+        elseif show_ui == 1 then
+            show_help = true
+            show_boxes = true
+            show_crosshairs = true
+        elseif show_ui == 2 then
+            show_help = false
+            show_boxes = false
+            show_crosshairs = true
+        elseif show_ui == 3 then
+            show_help = false
+            show_boxes = false
+            show_crosshairs = false
+        end
     end
 
     -- press tele to toggle telemetry
