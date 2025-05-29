@@ -1360,24 +1360,22 @@ local function parse_user_input_for_map(event, touchState)
         show_ui = (show_ui + 1) % 4
     end
     
-    if show_ui ~= show_ui_old then
-        if show_ui == 0 then
-            show_help = false
-            show_boxes = true
-            show_crosshairs = true
-        elseif show_ui == 1 then
-            show_help = true
-            show_boxes = true
-            show_crosshairs = true
-        elseif show_ui == 2 then
-            show_help = false
-            show_boxes = false
-            show_crosshairs = true
-        elseif show_ui == 3 then
-            show_help = false
-            show_boxes = false
-            show_crosshairs = false
-        end
+    if show_ui == 0 then
+        show_help = false
+        show_boxes = true
+        show_crosshairs = true
+    elseif show_ui == 1 then
+        show_help = true
+        show_boxes = true
+        show_crosshairs = true
+    elseif show_ui == 2 then
+        show_help = false
+        show_boxes = false
+        show_crosshairs = true
+    elseif show_ui == 3 then
+        show_help = false
+        show_boxes = false
+        show_crosshairs = false
     end
 
     -- press tele to toggle telemetry
@@ -1390,6 +1388,17 @@ local function parse_user_input_for_map(event, touchState)
     return selected_point ~= selected_point_old or show_ui_old ~= show_ui or telemetry_index_old ~= telemetry_index or start_point ~= start_point_old or end_point ~= end_point_old or selected_style ~= selected_style_old
 end
 
+local function initialize_map_parameters()
+    selected_point = 0
+    start_proportion = 0
+    end_proportion = 1
+    telemetry_index = 1
+    show_ui = 0
+    n_points = valPos
+    -- Note that n_points will be significantly smaller than
+    -- current_session.total_lines if skip_lines > 1.
+end
+
 local function state_SHOW_GRAPH_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
@@ -1397,9 +1406,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
     end
     
     if map_drawn == false then
-        n_points = valPos
-        -- Note that n_points will be significantly smaller than
-        -- current_session.total_lines if skip_lines > 1.
+        initialize_map_parameters()
         compute_map_boundary()
     end
 
@@ -1467,7 +1474,6 @@ function M.run(event, touchState)
         return state_SELECT_SENSORS_INIT(event, touchState)
 
     elseif state == STATE.SELECT_SENSORS then
-        map_drawn = false
         return state_SELECT_SENSORS_refresh(event, touchState)
 
     elseif state == STATE.READ_FILE_DATA then
