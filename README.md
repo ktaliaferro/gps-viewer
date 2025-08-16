@@ -21,7 +21,7 @@ GPS Viewer is based on [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-
 
 Copy the `SCRIPTS` directory to your transmitter.
 
-Optionally copy the `LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
+Optionally also copy the `LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
 
 ## Use
 

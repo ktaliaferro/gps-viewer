@@ -32,7 +32,8 @@ local blank_map_color = DARKGREEN
 local selected_point_size = 4 -- point diameter in pixels
 local max_points_draw = 500 -- maximum number of points to draw on the map
 local max_points_memory = 2000 -- maximum number of points to store in memory
-local heap_parse = 64 * 1024 -- number of bytes to parse at a time
+local heap_read = 64 * 1024 -- number of bytes to read at a time
+local lines_parse = 200 -- number of lines to parse at a time
 
 -- debugging parameters
 local show_indexing_times = false -- show indexing times for load testing purposes
@@ -253,9 +254,10 @@ local function collectData()
                 _values[varIndex] = {}
             end
         end
+        return false
     end
 
-    local read = io.read(hFile, heap_parse)
+    local read = io.read(hFile, heap_read)
     if read == "" then
         io.close(hFile)
         hFile = nil
@@ -297,7 +299,7 @@ local function collectData()
     end
 
     buffer = string.sub(buffer, i + 1) --dont forget the newline ;
-    index = index + heap_parse
+    index = index + heap_read
     io.seek(hFile, index)
     return false
 end
@@ -950,13 +952,13 @@ local function state_READ_FILE_DATA_refresh(event, touchState)
         return 0
     end
 
-    display_read_data_progress(0, 0)
-
     local is_done = collectData()
     if is_done then
         conversionSensorId = 0
         state = STATE.PARSE_DATA
     end
+    
+    display_read_data_progress(0, 0)
 
     return 0
 end
@@ -1022,7 +1024,7 @@ local function state_PARSE_DATA_refresh(event, touchState)
                 end
             end
 
-            if cnt > 100 then
+            if cnt > lines_parse then
                 return 0
             end
         end
