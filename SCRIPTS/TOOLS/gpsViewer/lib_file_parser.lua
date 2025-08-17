@@ -57,6 +57,13 @@ function contains(table, element)
     return false
 end
 
+function M.resetFileReader()
+    if index_file ~= nil then
+        io.close(index_file)
+        index_file = nil
+    end
+end
+
 function M.getFileDataInfo(fileName)
     M.m_log.info("getFileDataInfo(%s)", fileName)
 

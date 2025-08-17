@@ -13,6 +13,11 @@ M.log_files_index_info = {}
 
 M.indexed_filenames = {}
 
+function M.resetFileIndexer()
+    M.log_files_index_info = {}
+    M.indexed_filenames = {}
+end
+
 function M.compare_file_names_inc(a, b)
     local a1 = string.sub(a.file_name, -21, -5)
     local b1 = string.sub(b.file_name, -21, -5)

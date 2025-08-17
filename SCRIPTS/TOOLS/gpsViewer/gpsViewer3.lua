@@ -147,10 +147,12 @@ local styles = {"Curve", "Points"}
 local selected_style=1
 
 -- Instantiate a new GUI object
-local ctx1 = m_libgui.newGUI()
-local ctx2 = m_libgui.newGUI()
-local ctx3 = m_libgui.newGUI()
-local select_file_gui_init = false
+--local ctx1 = m_libgui.newGUI()
+--local ctx2 = m_libgui.newGUI()
+--local ctx3 = m_libgui.newGUI()
+local ctx1
+local ctx2
+local ctx3
 
 local selected_point = 0
 local start_proportion = 0
@@ -613,6 +615,7 @@ end
 local function state_SELECT_INDEX_TYPE_init(event, touchState)
     log("state_SELECT_INDEX_TYPE_init()")
     log("creating new window gui")
+    ctx3 = m_libgui.newGUI()
 
     ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
 
@@ -644,12 +647,45 @@ end
 
 local function state_INDEX_FILES_INIT(event, touchState)
     log("state_INDEX_FILES_INIT()")
-    lcd.drawText(5, 30, "Generating list of log files", TEXT_COLOR + BOLD)
+
+    -- reset indexing variables
+    log_file_list_raw = {}
+    log_file_list_raw_idx = -1
+    files_indexed_successfully = 0
+    files_already_indexed = 0
+    files_too_large = 0
+    files_without_gps = 0
+    files_too_short = 0
+    index_times = {}
+    filenames = {}
+    filename = nil
+    filename_idx = 1
+    log_file_list_filtered = {}
+    log_file_list_filtered2 = {}
+    filter_model_name = nil
+    filter_model_name_idx = 1
+    filter_date = nil
+    filter_date_idx = 1
+    m_lib_file_parser.resetFileReader()
+    m_index_file.resetFileIndexer()
+
+    -- draw GUI
+    drawMain()
+    lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
+    lcd.drawText(5, 60, string.format("indexing files:"), TEXT_COLOR + SMLSIZE)
+    drawProgress(160, 60, 0, 1)
+
     state = STATE.INDEX_FILES
+
     return 0
 end
 
 local function state_INDEX_FILES(event, touchState)
+    if event == EVT_VIRTUAL_NEXT_PAGE then
+        state = STATE.SELECT_FILE_INIT
+        return 0
+    end
+
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_INDEX_TYPE
         return 0
@@ -672,43 +708,40 @@ local function state_SELECT_FILE_init(event, touchState)
     m_tables.table_clear(log_file_list_filtered)
     filter_log_file_list(nil, nil, false)
 
-    if select_file_gui_init == false then
-        select_file_gui_init = true
-        -- creating new window gui
-        log("creating new window gui")
+    -- creating new window gui
+    log("creating new window gui")
+    ctx1 = m_libgui.newGUI()
 
-        ctx1.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
+    ctx1.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
 
-        ctx1.label(10, 55, 60, 24, "Model")
-        ddModel = ctx1.dropDown(90, 55, 380, 24, model_name_list, 1,
-            function(obj)
-                local i = obj.selected
-                filter_model_name = model_name_list[i]
-                filter_model_name_idx = i
-                log("Selected model-name: " .. filter_model_name)
-                filter_log_file_list(filter_model_name, filter_date, true)
-            end
-        )
+    ctx1.label(10, 55, 60, 24, "Model")
+    ddModel = ctx1.dropDown(90, 55, 380, 24, model_name_list, 1,
+        function(obj)
+            local i = obj.selected
+            filter_model_name = model_name_list[i]
+            filter_model_name_idx = i
+            log("Selected model-name: " .. filter_model_name)
+            filter_log_file_list(filter_model_name, filter_date, true)
+        end
+    )
 
-        ctx1.label(10, 80, 60, 24, "Date")
-        ctx1.dropDown(90, 80, 380, 24, date_list, 1,
-            function(obj)
-                local i = obj.selected
-                filter_date = date_list[i]
-                filter_date_idx = i
-                log("Selected filter_date: " .. filter_date)
-                filter_log_file_list(filter_model_name, filter_date, true)
-            end
-        )
+    ctx1.label(10, 80, 60, 24, "Date")
+    ctx1.dropDown(90, 80, 380, 24, date_list, 1,
+        function(obj)
+            local i = obj.selected
+            filter_date = date_list[i]
+            filter_date_idx = i
+            log("Selected filter_date: " .. filter_date)
+            filter_log_file_list(filter_model_name, filter_date, true)
+        end
+    )
 
-        log("setting file combo...")
-        ctx1.label(10, 105, 60, 24, "Log file")
-        ddLogFile = ctx1.dropDown(90, 105, 380, 24, log_file_list_filtered2, filename_idx,
-            onLogFileChange
-        )
-        onLogFileChange(ddLogFile)
-
-    end
+    log("setting file combo...")
+    ctx1.label(10, 105, 60, 24, "Log file")
+    ddLogFile = ctx1.dropDown(90, 105, 380, 24, log_file_list_filtered2, filename_idx,
+        onLogFileChange
+    )
+    onLogFileChange(ddLogFile)
 
     --filter_model_name_i
     ddModel.selected = filter_model_name_idx
@@ -723,6 +756,11 @@ local function state_SELECT_FILE_init(event, touchState)
 end
 
 local function state_SELECT_FILE_refresh(event, touchState)
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+        state = STATE.SELECT_INDEX_TYPE
+        return 0
+    end
+
     display_indexing_status(BLACK)
     
     -- load indexed data for the selected log file
@@ -949,6 +987,10 @@ end
 local function state_READ_FILE_DATA_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
+        if hFile ~= nil then
+           io.close(hFile)
+           hFile = nil
+        end
         return 0
     end
 
@@ -964,10 +1006,7 @@ local function state_READ_FILE_DATA_refresh(event, touchState)
 end
 
 local function state_PARSE_DATA_refresh(event, touchState)
-    if event == EVT_VIRTUAL_EXIT then
-        return 2
-
-    elseif event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
         return 0
     end
