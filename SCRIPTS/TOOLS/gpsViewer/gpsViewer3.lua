@@ -55,7 +55,6 @@ local string_sub = string.sub
 local string_char = string.char
 local string_byte = string.byte
 
-
 local hFile
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
@@ -146,10 +145,6 @@ local selected_map = 1
 local styles = {"Curve", "Points"}
 local selected_style=1
 
--- Instantiate a new GUI object
---local ctx1 = m_libgui.newGUI()
---local ctx2 = m_libgui.newGUI()
---local ctx3 = m_libgui.newGUI()
 local ctx1
 local ctx2
 local ctx3
@@ -433,7 +428,6 @@ local function display_indexing_status(text_color)
     lcd.drawText(10, LCD_H-40 - offset, string.format("%d log files not indexed due to size over %d MB.", files_too_large, max_log_size_MB), text_color + SMLSIZE)
     lcd.drawText(10, LCD_H-20 - offset, string.format("%d log files not indexed due to missing GPS field.", files_without_gps), text_color + SMLSIZE)
 end
-    
 
 local function read_and_index_file_list()
 
@@ -615,6 +609,7 @@ end
 local function state_SELECT_INDEX_TYPE_init(event, touchState)
     log("state_SELECT_INDEX_TYPE_init()")
     log("creating new window gui")
+    filename = nil
     ctx3 = m_libgui.newGUI()
 
     ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
@@ -637,6 +632,10 @@ local function state_SELECT_INDEX_TYPE_refresh(event, touchState)
     if event == EVT_VIRTUAL_NEXT_PAGE then
         state = STATE.INDEX_FILES_INIT
         return 0
+    end
+    
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+        return 1
     end
 
     -- lcd.drawText(30, 1, "Indexing type for new logs", WHITE + SMLSIZE)
@@ -757,7 +756,7 @@ end
 
 local function state_SELECT_FILE_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
-        state = STATE.SELECT_INDEX_TYPE
+        state = STATE.SELECT_INDEX_TYPE_INIT
         return 0
     end
 
