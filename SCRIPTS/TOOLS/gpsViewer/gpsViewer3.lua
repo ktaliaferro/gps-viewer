@@ -319,7 +319,7 @@ local function drawProgress(x, y, current, total)
         pct = 0
     end
     lcd.drawFilledRectangle(x + 1, y + 1, (470 - x - 2) * pct, 14, TEXT_INVERTED_BGCOLOR)
-    lcd.drawRectangle(x, y, 470 - x, 16, TEXT_COLOR)
+    lcd.drawRectangle(x, y, 470 - x, 16, COLOR_THEME_SECONDARY1)
 end
 
 local function get_log_files_list()
@@ -479,15 +479,15 @@ local function read_and_index_file_list()
             
             -- draw GUI
             drawMain()
-            lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
-            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), TEXT_COLOR + SMLSIZE)
+            lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_SECONDARY1 + BOLD)
+            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), COLOR_THEME_SECONDARY1 + SMLSIZE)
             if index_size_KB == nil
                 then index_size_KB = 0
             end
-            lcd.drawText(5, 90, string.format("* %s (%d KB / %d KB)", filename, math.floor(index_progress * index_size_KB), index_size_KB), TEXT_COLOR + SMLSIZE)
+            lcd.drawText(5, 90, string.format("* %s (%d KB / %d KB)", filename, math.floor(index_progress * index_size_KB), index_size_KB), COLOR_THEME_SECONDARY1 + SMLSIZE)
             drawProgress(160, 60, log_file_list_raw_idx - 1 + index_progress, #log_file_list_raw)
             log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
-            display_indexing_status(TEXT_COLOR)
+            display_indexing_status(COLOR_THEME_SECONDARY1)
         end
     end
 
@@ -670,8 +670,8 @@ local function state_INDEX_FILES_INIT(event, touchState)
 
     -- draw GUI
     drawMain()
-    lcd.drawText(5, 30, "Indexing log file durations and columns", TEXT_COLOR + BOLD)
-    lcd.drawText(5, 60, string.format("indexing files:"), TEXT_COLOR + SMLSIZE)
+    lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_SECONDARY1 + BOLD)
+    lcd.drawText(5, 60, string.format("indexing files:"), COLOR_THEME_SECONDARY1 + SMLSIZE)
     drawProgress(160, 60, 0, 1)
 
     state = STATE.INDEX_FILES
@@ -940,9 +940,9 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
 end
 
 local function display_read_data_progress(conversionSensorId, conversionSensorProgress)
-    lcd.drawText(5, 25, "Reading data from file...", TEXT_COLOR)
+    lcd.drawText(5, 25, "Reading data from file...", COLOR_THEME_SECONDARY1)
 
-    lcd.drawText(5, 60, "Reading line: " .. lines, TEXT_COLOR)
+    lcd.drawText(5, 60, "Reading line: " .. lines, COLOR_THEME_SECONDARY1)
     drawProgress(140, 60, lines, current_session.total_lines)
 
     local done_var_1 = 0
@@ -969,16 +969,16 @@ local function display_read_data_progress(conversionSensorId, conversionSensorPr
     end
     local y = 85
     local dy = 25
-    lcd.drawText(5, y, "Parsing Field 1: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Field 1: ", COLOR_THEME_SECONDARY1)
     drawProgress(140, y, done_var_1, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Field 2: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Field 2: ", COLOR_THEME_SECONDARY1)
     drawProgress(140, y, done_var_2, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Latitude: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Latitude: ", COLOR_THEME_SECONDARY1)
     drawProgress(140, y, done_var_3, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Longitude: ", TEXT_COLOR)
+    lcd.drawText(5, y, "Parsing Longitude: ", COLOR_THEME_SECONDARY1)
     drawProgress(140, y, done_var_4, valPos)
 
 end
