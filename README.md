@@ -55,8 +55,12 @@ To exit the app, press and hold the return button.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank map (shown below) or add a 480x272 satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.
+For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  The resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S, the image should have a resolution of 480x272 pixels.
 
 ![screenshot](images/blank_map.png)
 
-To generate a 480x272 satellite image, you can use [this map generator](https://ethosmap.hobby4life.nl/).  Alternatively, you can use [Google Maps](https://www.google.com/maps), take a screenshot, and manually crop and resize it using a free image editing program like [Gimp](https://www.gimp.org/).
+To generate a satellite image, you can use [this map generator](https://ethosmap.hobby4life.nl/).  Alternatively, you can take a screenshot from [Google Maps](https://www.google.com/maps) and manually crop and resize it using a free image editing program like [Gimp](https://www.gimp.org/).
+
+## Other Transmitters
+
+While GPS Viewer has been fully tested only on the Radiomaster TX16S, it will likely work on other [color screen transmitters](https://manual.edgetx.org/color-radios) running EdgeTX.  Users just need to size their satellite images to match their screen resolution as described above.
