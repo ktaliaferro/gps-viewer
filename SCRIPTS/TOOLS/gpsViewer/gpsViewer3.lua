@@ -106,11 +106,14 @@ local STATE = {
 
     SELECT_SENSORS_INIT = 7,
     SELECT_SENSORS = 8,
+    
+    LOAD_MAP_INIT = 9,
+    LOAD_MAP_REFRESH = 10,
 
-    READ_FILE_DATA = 9,
-    PARSE_DATA = 10,
+    READ_FILE_DATA = 11,
+    PARSE_DATA = 12,
 
-    SHOW_GRAPH = 11
+    SHOW_GRAPH = 13
 }
 
 local state = STATE.SPLASH
@@ -925,7 +928,7 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
 
     elseif event == EVT_VIRTUAL_NEXT_PAGE and sensorSelection[1].idx ~= 1 then
         -- Proceed if the user made a selection for "Field 1."
-        state = STATE.READ_FILE_DATA
+        state = STATE.LOAD_MAP_INIT
         return 0
     end
     
@@ -1131,10 +1134,7 @@ end
 
 local function draw_map_background()
     lcd.clear(blank_map_color)
-    if maps[selected_map]["path"] ~= nil then
-        if maps[selected_map]["image"] == nil then
-            maps[selected_map]["image"] = Bitmap.open(maps[selected_map]["path"])
-        end
+    if maps[selected_map]["image"] ~= nil then
         lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
     end
 end
@@ -1439,6 +1439,60 @@ local function initialize_map_parameters()
     -- current_session.total_lines if skip_lines > 1.
 end
 
+local function dimensions_match()
+    -- check if map dimensions match screen dimensions
+    if maps[selected_map]["image"] == nil then
+        maps[selected_map]["image"] = Bitmap.open(maps[selected_map]["path"])
+    end
+    if maps[selected_map]["width"] == nil or maps[selected_map]["height"] == nil then
+        maps[selected_map]["width"], maps[selected_map]["height"] = Bitmap.getSize(maps[selected_map]["image"])
+    end
+    return maps[selected_map]["width"] == LCD_W and maps[selected_map]["height"] == LCD_H
+end
+
+local function state_LOAD_MAP_init(event, touchState)
+    if maps[selected_map]["path"] == nil or dimensions_match() then
+        -- proceed to read file data if dimensions match
+        state = STATE.READ_FILE_DATA
+    else
+        local map_warning_text
+        if maps[selected_map]["width"] < 1 or maps[selected_map]["height"] < 1 then
+            map_warning_text = {
+                string.format("Invalid map file %s. ",
+                    maps[selected_map]["path"]) ..
+                "Press Page> to proceed with a blank map " ..
+                "or press Page< to select another map."
+            }
+        else
+            map_warning_text = {
+                string.format("Map (%s) dimensions %d x %d ",
+                    maps[selected_map]["name"], maps[selected_map]["width"], maps[selected_map]["height"]) ..
+                string.format("do not match screen dimensions %d x %d. ", LCD_W, LCD_H) ..
+                "Press Page> to proceed with a blank map " ..
+                "or press Page< to select another map."
+            }
+        end
+        lcd.drawTextLines(10,25,LCD_W-20,LCD_H-35,map_warning_text[1], COLOR_THEME_SECONDARY1)
+        state = STATE.LOAD_MAP_REFRESH
+    end
+    return 0
+end
+
+local function state_LOAD_MAP_refresh(event, touchState)
+    if event == EVT_VIRTUAL_NEXT_PAGE then
+        -- switch to the blank map and proceed
+        selected_map = #maps -- the last map is the blank map
+        state = STATE.READ_FILE_DATA
+    end
+    
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+        -- go back and select another map
+        state = STATE.SELECT_SENSORS_INIT
+    end
+    
+    return 0
+end
+
 local function state_SHOW_GRAPH_refresh(event, touchState)
     if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
         state = STATE.SELECT_SENSORS_INIT
@@ -1482,7 +1536,9 @@ function M.run(event, touchState)
         return 2
     end
 
-    if state ~= STATE.SHOW_GRAPH and state ~= STATE.INDEX_FILES then drawMain() end
+    if state ~= STATE.SHOW_GRAPH and state ~= STATE.INDEX_FILES and state ~= STATE.LOAD_MAP_REFRESH then
+        drawMain()
+    end
 
     if state == STATE.SPLASH then
         return state_SPLASH()
@@ -1523,14 +1579,20 @@ function M.run(event, touchState)
     elseif state == STATE.PARSE_DATA then
         log("STATE.PARSE_DATA")
         return state_PARSE_DATA_refresh(event, touchState)
+        
+    elseif state == STATE.LOAD_MAP_INIT then
+        log("STATE.LOAD_MAP_INIT")
+        return state_LOAD_MAP_init(event, touchState)
+
+    elseif state == STATE.LOAD_MAP_REFRESH then
+        return state_LOAD_MAP_refresh(event, touchState)
 
     elseif state == STATE.SHOW_GRAPH then
         return state_SHOW_GRAPH_refresh(event, touchState)
-
     end
 
     --impossible state
-    error("Something went wrong with the script!")
+    error("Invalid state")
     return 2
 end
 
