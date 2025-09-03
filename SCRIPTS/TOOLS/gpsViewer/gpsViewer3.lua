@@ -27,8 +27,10 @@ function M.getVer()
 end
 
 -- configuration
-local crosshair_color = GREEN
-local blank_map_color = DARKGREEN
+local CROSSHAIR_COLOR = GREEN
+local MAP_BACKGROUND_COLOR = DARKGREEN
+local MAP_UI_BACKGROUND_COLOR = BLACK
+local MAP_UI_TEXT_COLOR = WHITE
 local selected_point_size = 4 -- point diameter in pixels
 local max_points_draw = 500 -- maximum number of points to draw on the map
 local max_points_memory = 2000 -- maximum number of points to store in memory
@@ -218,12 +220,12 @@ local function drawMain()
     lcd.clear()
 
     -- draw top-bar
-    lcd.drawFilledRectangle(0, 0, LCD_W, 20, TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 20, COLOR_THEME_SECONDARY1)
     --lcd.drawText(440, 1, "v" .. app_ver, WHITE + SMLSIZE)
 
     if filename ~= nil and filename ~= "not found" then
         -- draw log file name
-        lcd.drawText(30, 1, "/LOGS/" .. filename, WHITE + SMLSIZE)
+        lcd.drawText(30, 1, "/LOGS/" .. filename, COLOR_THEME_SECONDARY3 + SMLSIZE)
     end
 end
 
@@ -318,7 +320,7 @@ local function drawProgress(x, y, current, total)
     else
         pct = 0
     end
-    lcd.drawFilledRectangle(x + 1, y + 1, (470 - x - 2) * pct, 14, TEXT_INVERTED_BGCOLOR)
+    lcd.drawFilledRectangle(x + 1, y + 1, (470 - x - 2) * pct, 14, COLOR_THEME_FOCUS)
     lcd.drawRectangle(x, y, 470 - x, 16, COLOR_THEME_SECONDARY1)
 end
 
@@ -479,15 +481,15 @@ local function read_and_index_file_list()
             
             -- draw GUI
             drawMain()
-            lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_SECONDARY1 + BOLD)
-            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), COLOR_THEME_SECONDARY1 + SMLSIZE)
+            lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_PRIMARY1 + BOLD)
+            lcd.drawText(5, 60, string.format("indexing files: (%d/%d)", log_file_list_raw_idx, #log_file_list_raw), COLOR_THEME_PRIMARY1 + SMLSIZE)
             if index_size_KB == nil
                 then index_size_KB = 0
             end
-            lcd.drawText(5, 90, string.format("* %s (%d KB / %d KB)", filename, math.floor(index_progress * index_size_KB), index_size_KB), COLOR_THEME_SECONDARY1 + SMLSIZE)
+            lcd.drawText(5, 90, string.format("* %s (%d KB / %d KB)", filename, math.floor(index_progress * index_size_KB), index_size_KB), COLOR_THEME_PRIMARY1 + SMLSIZE)
             drawProgress(160, 60, log_file_list_raw_idx - 1 + index_progress, #log_file_list_raw)
             log("log file: (%d/%d) %s (detecting...)", log_file_list_raw_idx, #log_file_list_raw, filename)
-            display_indexing_status(COLOR_THEME_SECONDARY1)
+            display_indexing_status(COLOR_THEME_PRIMARY1)
         end
     end
 
@@ -670,8 +672,8 @@ local function state_INDEX_FILES_INIT(event, touchState)
 
     -- draw GUI
     drawMain()
-    lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_SECONDARY1 + BOLD)
-    lcd.drawText(5, 60, string.format("indexing files:"), COLOR_THEME_SECONDARY1 + SMLSIZE)
+    lcd.drawText(5, 30, "Indexing log file durations and columns", COLOR_THEME_PRIMARY1 + BOLD)
+    lcd.drawText(5, 60, string.format("indexing files:"), COLOR_THEME_PRIMARY1 + SMLSIZE)
     drawProgress(160, 60, 0, 1)
 
     state = STATE.INDEX_FILES
@@ -760,7 +762,7 @@ local function state_SELECT_FILE_refresh(event, touchState)
         return 0
     end
 
-    display_indexing_status(BLACK)
+    display_indexing_status(COLOR_THEME_PRIMARY1)
     
     -- load indexed data for the selected log file
     if event == EVT_VIRTUAL_NEXT_PAGE then
@@ -930,9 +932,9 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
     end
     
     -- display log file info
-    lcd.drawText(10, LCD_H-60, string.format("%d KB log file size", log_size_KB), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-40, string.format("%s log file duration", string.sub(toDuration(current_session.total_seconds),1,-3)), BLACK + SMLSIZE)
-    lcd.drawText(10, LCD_H-20, string.format("%.1f sec logging interval", logging_interval), BLACK + SMLSIZE)
+    lcd.drawText(10, LCD_H-60, string.format("%d KB log file size", log_size_KB), COLOR_THEME_PRIMARY1 + SMLSIZE)
+    lcd.drawText(10, LCD_H-40, string.format("%s log file duration", string.sub(toDuration(current_session.total_seconds),1,-3)), COLOR_THEME_PRIMARY1 + SMLSIZE)
+    lcd.drawText(10, LCD_H-20, string.format("%.1f sec logging interval", logging_interval), COLOR_THEME_PRIMARY1 + SMLSIZE)
 
     ctx2.run(event, touchState)
 
@@ -940,9 +942,9 @@ local function state_SELECT_SENSORS_refresh(event, touchState)
 end
 
 local function display_read_data_progress(conversionSensorId, conversionSensorProgress)
-    lcd.drawText(5, 25, "Reading data from file...", COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, 25, "Reading data from file...", COLOR_THEME_PRIMARY1)
 
-    lcd.drawText(5, 60, "Reading line: " .. lines, COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, 60, "Reading line: " .. lines, COLOR_THEME_PRIMARY1)
     drawProgress(140, 60, lines, current_session.total_lines)
 
     local done_var_1 = 0
@@ -969,16 +971,16 @@ local function display_read_data_progress(conversionSensorId, conversionSensorPr
     end
     local y = 85
     local dy = 25
-    lcd.drawText(5, y, "Parsing Field 1: ", COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, y, "Parsing Field 1: ", COLOR_THEME_PRIMARY1)
     drawProgress(140, y, done_var_1, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Field 2: ", COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, y, "Parsing Field 2: ", COLOR_THEME_PRIMARY1)
     drawProgress(140, y, done_var_2, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Latitude: ", COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, y, "Parsing Latitude: ", COLOR_THEME_PRIMARY1)
     drawProgress(140, y, done_var_3, valPos)
     y = y + dy
-    lcd.drawText(5, y, "Parsing Longitude: ", COLOR_THEME_SECONDARY1)
+    lcd.drawText(5, y, "Parsing Longitude: ", COLOR_THEME_PRIMARY1)
     drawProgress(140, y, done_var_4, valPos)
 
 end
@@ -1130,7 +1132,7 @@ local function compute_map_boundary()
 end
 
 local function draw_map_background()
-    lcd.clear(blank_map_color)
+    lcd.clear(MAP_BACKGROUND_COLOR)
     if maps[selected_map]["path"] ~= nil then
         if maps[selected_map]["image"] == nil then
             maps[selected_map]["image"] = Bitmap.open(maps[selected_map]["path"])
@@ -1210,11 +1212,11 @@ local function draw_map()
 
     if n_gps_values == 0 then
         -- show error message if there is no GPS data
-        lcd.drawFilledRectangle(75,130,200,40,BLACK)
+        lcd.drawFilledRectangle(75,130,200,40,MAP_UI_BACKGROUND_COLOR)
         lcd.drawText( 80, 130, "No GPS Data", DBLSIZE + RED)
     elseif n_map_values == 0 then
         -- show error message if GPS data is a outside of the map
-        lcd.drawFilledRectangle(75,130,340,40,BLACK)
+        lcd.drawFilledRectangle(75,130,340,40,MAP_UI_BACKGROUND_COLOR)
         lcd.drawText( 80, 130, "GPS Data Outside Map", DBLSIZE + RED)
     end
 
@@ -1224,18 +1226,18 @@ local function draw_map()
             x = (_values[long_index][selected_point] - long_min) / dx * LCD_W
             y = LCD_H - (_values[lat_index][selected_point] - lat_min) / dy * LCD_H
             if x >= 0 and x <= LCD_W then
-                lcd.drawLine(x,0,x,LCD_H,SOLID,crosshair_color)
+                lcd.drawLine(x,0,x,LCD_H,SOLID,CROSSHAIR_COLOR)
             end
             if y >= 0 and y <= LCD_H then
-                lcd.drawLine(0,y,LCD_W,y,SOLID,crosshair_color)
+                lcd.drawLine(0,y,LCD_W,y,SOLID,CROSSHAIR_COLOR)
             end
         end
     end
     
     if show_boxes then
         -- draw telemetry of selected point
-        lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,BLACK)
-        lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_points-1)), WHITE + SMLSIZE)
+        lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,MAP_UI_BACKGROUND_COLOR)
+        lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_points-1)), MAP_UI_TEXT_COLOR + SMLSIZE)
         for i = 1,2,1 do
             if sensorSelection[i].idx ~= 1 then
                 local telemetry_string = ":"
@@ -1243,7 +1245,7 @@ local function draw_map()
                     telemetry_string = string.format(": %.1f", _values[i][selected_point])
                 end
                 local offset = 20 * (i - 1)
-                lcd.drawText(0,LCD_H-80+offset,_points[i]["name"] .. telemetry_string, WHITE + SMLSIZE)
+                lcd.drawText(0,LCD_H-80+offset,_points[i]["name"] .. telemetry_string, MAP_UI_TEXT_COLOR + SMLSIZE)
             end
         end
         local lat_string = " "
@@ -1252,18 +1254,18 @@ local function draw_map()
             lat_string = string.format(" %.6f", _values[lat_index][selected_point])
             long_string = string.format(" %.6f", _values[long_index][selected_point])
         end
-        lcd.drawText(0,LCD_H-40,"lat:" .. lat_string, WHITE + SMLSIZE)
-        lcd.drawText(0,LCD_H-20,"long:" .. long_string, WHITE + SMLSIZE)
+        lcd.drawText(0,LCD_H-40,"lat:" .. lat_string, MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(0,LCD_H-20,"long:" .. long_string, MAP_UI_TEXT_COLOR + SMLSIZE)
 
         -- draw legend background
-        local width_name, _ = lcd.sizeText(_points[telemetry_index]["name"], WHITE + SMLSIZE)
-        local width_min = lcd.sizeText(string.format("%.1f", tele_max), WHITE + SMLSIZE)
-        local width_max =  lcd.sizeText(string.format("%.1f", tele_min), WHITE + SMLSIZE)
+        local width_name, _ = lcd.sizeText(_points[telemetry_index]["name"], MAP_UI_TEXT_COLOR + SMLSIZE)
+        local width_min = lcd.sizeText(string.format("%.1f", tele_max), MAP_UI_TEXT_COLOR + SMLSIZE)
+        local width_max =  lcd.sizeText(string.format("%.1f", tele_min), MAP_UI_TEXT_COLOR + SMLSIZE)
         local scale_width = math.max(60, width_name, 15+width_min, 15+width_max)
-        lcd.drawFilledRectangle(0,0,scale_width,155,BLACK)
+        lcd.drawFilledRectangle(0,0,scale_width,155,MAP_UI_BACKGROUND_COLOR)
 
         -- draw field name
-        lcd.drawText(0,0,_points[telemetry_index]["name"], WHITE + SMLSIZE)
+        lcd.drawText(0,0,_points[telemetry_index]["name"], MAP_UI_TEXT_COLOR + SMLSIZE)
 
         -- draw scale
         for i = 0, 25, 1 do
@@ -1271,24 +1273,24 @@ local function draw_map()
         end
 
         -- draw scale labels
-        lcd.drawText(15, 15, string.format("%.1f", tele_max), WHITE + SMLSIZE)
-        lcd.drawText(15, 135, string.format("%.1f",tele_min), WHITE + SMLSIZE)
+        lcd.drawText(15, 15, string.format("%.1f", tele_max), MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(15, 135, string.format("%.1f",tele_min), MAP_UI_TEXT_COLOR + SMLSIZE)
         
         -- draw timeline
-        lcd.drawFilledRectangle(LCD_W-110,LCD_H-30,110,30,BLACK)
-        lcd.drawText(LCD_W-110+30,LCD_H-30,"Timeline", WHITE + SMLSIZE)
-        lcd.drawFilledRectangle(LCD_W-105,LCD_H-8,1,6,WHITE)
-        lcd.drawFilledRectangle(LCD_W-6,LCD_H-8,1,6,WHITE)
+        lcd.drawFilledRectangle(LCD_W-110,LCD_H-30,110,30,MAP_UI_BACKGROUND_COLOR)
+        lcd.drawText(LCD_W-110+30,LCD_H-30,"Timeline", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawFilledRectangle(LCD_W-105,LCD_H-8,1,6,MAP_UI_TEXT_COLOR)
+        lcd.drawFilledRectangle(LCD_W-6,LCD_H-8,1,6,MAP_UI_TEXT_COLOR)
         local timeline_width = 100 * (end_proportion - start_proportion)
         local timeline_start = LCD_W - 105 + start_proportion * 100
-        lcd.drawFilledRectangle(timeline_start,LCD_H-6,timeline_width,2,WHITE)
+        lcd.drawFilledRectangle(timeline_start,LCD_H-6,timeline_width,2,MAP_UI_TEXT_COLOR)
         local selected_proportion = selected_point / (n_points-1)
-        lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,crosshair_color)
+        lcd.drawFilledRectangle(LCD_W - 105 + 99 * selected_proportion,LCD_H-8,1,6,CROSSHAIR_COLOR)
     end
     if show_map_draw_count then
         -- display map draw count for debugging purposes
-        lcd.drawFilledRectangle(0,LCD_H-120,105,20,BLACK)
-        lcd.drawText(0,LCD_H-120,string.format("Map Draws: %d", map_draws), WHITE + SMLSIZE)
+        lcd.drawFilledRectangle(0,LCD_H-120,105,20,MAP_UI_BACKGROUND_COLOR)
+        lcd.drawText(0,LCD_H-120,string.format("Map Draws: %d", map_draws), MAP_UI_TEXT_COLOR + SMLSIZE)
     end
 end
 
@@ -1296,20 +1298,20 @@ local function draw_help()
     if show_boxes and not show_help then
         local box_width = 160
         local box_height = 20
-        lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
-        lcd.drawText(LCD_W-box_width+5,0,"press next page: show help", WHITE + SMLSIZE)
+        lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,MAP_UI_BACKGROUND_COLOR)
+        lcd.drawText(LCD_W-box_width+5,0,"press next page: show help", MAP_UI_TEXT_COLOR + SMLSIZE)
     elseif show_help then
         local box_width = 220
         local box_height = 160
-        lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,BLACK)
-        lcd.drawText(LCD_W-box_width+5,0,"press next page: toggle user interface", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,20,"elevator stick: zoom timeline", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,40,"aileron stick: pan timeline", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,60,"rudder stick: move crosshair", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,80,"scroll wheel: fine tune crosshair", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,100,"press wheel: toggle plot style", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,120,"press tele: toggle telemetry field", WHITE + SMLSIZE)
-        lcd.drawText(LCD_W-box_width+5,140,"press and hold return: exit", WHITE + SMLSIZE)
+        lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,MAP_UI_BACKGROUND_COLOR)
+        lcd.drawText(LCD_W-box_width+5,0,"press next page: toggle user interface", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,20,"elevator stick: zoom timeline", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,40,"aileron stick: pan timeline", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,60,"rudder stick: move crosshair", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,80,"scroll wheel: fine tune crosshair", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,100,"press wheel: toggle plot style", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,120,"press tele: toggle telemetry field", MAP_UI_TEXT_COLOR + SMLSIZE)
+        lcd.drawText(LCD_W-box_width+5,140,"press and hold return: exit", MAP_UI_TEXT_COLOR + SMLSIZE)
     end
 end
 
