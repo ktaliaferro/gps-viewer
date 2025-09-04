@@ -84,6 +84,10 @@ local index_type = INDEX_TYPE.ALL
 
 local filename
 local filename_idx = 1
+local file_selected
+local proceed_with_blank_map
+local select_another_map
+local map_warning_text
 
 local columns_by_header = {}
 local columns_with_data = {}
@@ -151,6 +155,7 @@ local selected_style=1
 local ctx1
 local ctx2
 local ctx3
+local ctx4
 
 local selected_point = 0
 local start_proportion = 0
@@ -751,7 +756,14 @@ local function state_SELECT_FILE_init(event, touchState)
     filter_log_file_list(filter_model_name, filter_date, true)
 
     ddLogFile.selected = filename_idx
-
+    
+    file_selected = false
+    
+    local button_width = 100
+    local button_height = 45
+    ctx1.button(LCD_W - button_width - 10,  LCD_H - button_height - 10,
+        button_width, button_height, "Next",
+        function() file_selected = true end)
 
     state = STATE.SELECT_FILE
     return 0
@@ -766,7 +778,7 @@ local function state_SELECT_FILE_refresh(event, touchState)
     display_indexing_status(BLACK)
     
     -- load indexed data for the selected log file
-    if event == EVT_VIRTUAL_NEXT_PAGE then
+    if event == EVT_VIRTUAL_NEXT_PAGE or file_selected then
         log("state_SELECT_FILE_refresh --> EVT_VIRTUAL_NEXT_PAGE: filename: %s", filename)
         if filename == "not found" then
             m_log.warn("state_SELECT_FILE_refresh: trying to next-page, but no logfile available, ignoring.")
@@ -904,6 +916,12 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
             selected_map = i
         end
     )
+    
+    local button_width = 100
+    local button_height = 45
+    ctx2.button(LCD_W - button_width - 10,  LCD_H - button_height - 10,
+        button_width, button_height, "Next",
+        function() state = STATE.LOAD_MAP_INIT end)
     
     log_size_KB = m_utils.get_size(filename)
 
@@ -1450,12 +1468,24 @@ local function dimensions_match()
     return maps[selected_map]["width"] == LCD_W and maps[selected_map]["height"] == LCD_H
 end
 
-local function state_LOAD_MAP_init(event, touchState)
+local function state_LOAD_MAP_init(event, touchState) 
+    proceed_with_blank_map = false
+    select_another_map = false
+    
     if maps[selected_map]["path"] == nil or dimensions_match() then
         -- proceed to read file data if dimensions match
         state = STATE.READ_FILE_DATA
     else
-        local map_warning_text
+        ctx4 = m_libgui.newGUI()
+        local button_width = 100
+        local button_height = 45
+        ctx4.button(LCD_W - button_width - 10,  LCD_H - button_height - 10,
+            button_width, button_height, "Next",
+            function() proceed_with_blank_map = true end)
+        ctx4.button(10,  LCD_H - button_height - 10,
+            button_width, button_height, "Previous",
+            function() select_another_map = true end)
+        
         if maps[selected_map]["width"] < 1 or maps[selected_map]["height"] < 1 then
             map_warning_text = {
                 string.format("Invalid map file %s. ",
@@ -1472,23 +1502,25 @@ local function state_LOAD_MAP_init(event, touchState)
                 "or press Page< to select another map."
             }
         end
-        lcd.drawTextLines(10,25,LCD_W-20,LCD_H-35,map_warning_text[1], COLOR_THEME_SECONDARY1)
         state = STATE.LOAD_MAP_REFRESH
     end
     return 0
 end
 
 local function state_LOAD_MAP_refresh(event, touchState)
-    if event == EVT_VIRTUAL_NEXT_PAGE then
+    if event == EVT_VIRTUAL_NEXT_PAGE or proceed_with_blank_map then
         -- switch to the blank map and proceed
         selected_map = #maps -- the last map is the blank map
         state = STATE.READ_FILE_DATA
     end
     
-    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE then
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE or select_another_map then
         -- go back and select another map
         state = STATE.SELECT_SENSORS_INIT
     end
+    
+    ctx4.run(event, touchState)
+    lcd.drawTextLines(10,25,LCD_W-20,LCD_H-35,map_warning_text[1], COLOR_THEME_SECONDARY1)
     
     return 0
 end
@@ -1536,7 +1568,7 @@ function M.run(event, touchState)
         return 2
     end
 
-    if state ~= STATE.SHOW_GRAPH and state ~= STATE.INDEX_FILES and state ~= STATE.LOAD_MAP_REFRESH then
+    if state ~= STATE.SHOW_GRAPH and state ~= STATE.INDEX_FILES then
         drawMain()
     end
 
