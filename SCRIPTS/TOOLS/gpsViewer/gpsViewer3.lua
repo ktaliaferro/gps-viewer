@@ -1418,6 +1418,13 @@ local function parse_user_input_for_map(event, touchState)
         show_ui = (show_ui + 1) % 4
     end
     
+    -- or touch screen to toggle the UI
+    if touchState then
+        if event == EVT_TOUCH_TAP then
+            show_ui = (show_ui + 1) % 4
+        end
+    end
+
     if show_ui == 0 then
         show_help = false
         show_boxes = true
@@ -1429,11 +1436,11 @@ local function parse_user_input_for_map(event, touchState)
     elseif show_ui == 2 then
         show_help = false
         show_boxes = false
-        show_crosshairs = true
+        show_crosshairs = false
     elseif show_ui == 3 then
         show_help = false
         show_boxes = false
-        show_crosshairs = false
+        show_crosshairs = true
     end
 
     -- press tele to toggle telemetry
