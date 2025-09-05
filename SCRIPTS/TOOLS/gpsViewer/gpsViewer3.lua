@@ -326,8 +326,8 @@ local function drawProgress(x, y, current, total)
     else
         pct = 0
     end
-    lcd.drawFilledRectangle(x + 1, y + 1, (470 - x - 2) * pct, 14, TEXT_INVERTED_BGCOLOR)
-    lcd.drawRectangle(x, y, 470 - x, 16, COLOR_THEME_SECONDARY1)
+    lcd.drawFilledRectangle(x + 1, y + 1, (LCD_W - 10 - x - 2) * pct, 14, TEXT_INVERTED_BGCOLOR)
+    lcd.drawRectangle(x, y, LCD_W - 10 - x, 16, COLOR_THEME_SECONDARY1)
 end
 
 local function get_log_files_list()
@@ -622,9 +622,11 @@ local function state_SELECT_INDEX_TYPE_init(event, touchState)
 
     ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
 
-    ctx3.button(90,  60, 320, 55, "Only last flight (fast)", onButtonIndexTypeLastFlight)
-    ctx3.button(90, 130, 320, 55, "Last flights day", onButtonIndexTypeToday)
-    ctx3.button(90, 200, 320, 55, "All flights (slow)", onButtonIndexTypeAll)
+    local width = math.min(320, LCD_W - 20)
+    local x = (LCD_W - width) // 2
+    ctx3.button(x,  60, width, 55, "Only last flight (fast)", onButtonIndexTypeLastFlight)
+    ctx3.button(x, 130, width, 55, "Last flights day", onButtonIndexTypeToday)
+    ctx3.button(x, 200, width, 55, "All flights (slow)", onButtonIndexTypeAll)
 
     -- default is ALL
     index_type = INDEX_TYPE.LAST
@@ -722,7 +724,8 @@ local function state_SELECT_FILE_init(event, touchState)
     ctx1.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
 
     ctx1.label(10, 55, 60, 24, "Model")
-    ddModel = ctx1.dropDown(90, 55, 380, 24, model_name_list, 1,
+    local menu_width = LCD_W - 90 - 10
+    ddModel = ctx1.dropDown(90, 55, menu_width, 24, model_name_list, 1,
         function(obj)
             local i = obj.selected
             filter_model_name = model_name_list[i]
@@ -733,7 +736,7 @@ local function state_SELECT_FILE_init(event, touchState)
     )
 
     ctx1.label(10, 80, 60, 24, "Date")
-    ctx1.dropDown(90, 80, 380, 24, date_list, 1,
+    ctx1.dropDown(90, 80, menu_width, 24, date_list, 1,
         function(obj)
             local i = obj.selected
             filter_date = date_list[i]
@@ -745,7 +748,7 @@ local function state_SELECT_FILE_init(event, touchState)
 
     log("setting file combo...")
     ctx1.label(10, 105, 60, 24, "Log file")
-    ddLogFile = ctx1.dropDown(90, 105, 380, 24, log_file_list_filtered2, filename_idx,
+    ddLogFile = ctx1.dropDown(90, 105, menu_width, 24, log_file_list_filtered2, filename_idx,
         onLogFileChange
     )
     onLogFileChange(ddLogFile)
@@ -887,8 +890,9 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
     ctx2.label(10, 25, 120, 24, "Make selection and press \"Page>\" button.", BOLD)
 
     log("setting field1...")
+    local menu_width = LCD_W - 100 - 10
     ctx2.label(10, 55, 60+10, 24, "Field 1")
-    ctx2.dropDown(90+10, 55, 380-10, 24, columns_with_data, sensorSelection[1].idx,
+    ctx2.dropDown(100, 55, menu_width, 24, columns_with_data, sensorSelection[1].idx,
         function(obj)
             local i = obj.selected
             local var1 = columns_with_data[i]
@@ -898,7 +902,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
         end
     )
     ctx2.label(10, 80, 60+10, 24, "Field 2")
-    ctx2.dropDown(90+10, 80, 380-10, 24, columns_with_data, sensorSelection[2].idx,
+    ctx2.dropDown(100, 80, menu_width, 24, columns_with_data, sensorSelection[2].idx,
         function(obj)
             local i = obj.selected
             local var2 = columns_with_data[i]
@@ -908,7 +912,7 @@ local function state_SELECT_SENSORS_INIT(event, touchState)
         end
     )
     ctx2.label(10, 105, 60+10, 24, "Map")
-    ctx2.dropDown(90+10, 105, 380-10, 24, map_names, selected_map,
+    ctx2.dropDown(100, 105, menu_width, 24, map_names, selected_map,
         function(obj)
             local i = obj.selected
             local var3 = map_names[i]
