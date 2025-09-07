@@ -1,6 +1,6 @@
 # GPS Viewer
 
-GPS Viewer is an EdgeTX app for the Radiomaster TX16S transmitter that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality.
+GPS Viewer is an app for [color screen RC transmitters](https://manual.edgetx.org/color-radios) running EdgeTX that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality.
 
 ![screenshot](images/screenshot_points.png)
 
@@ -58,9 +58,3 @@ To exit the app, press and hold the return button.
 For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  The resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S, the image should have a resolution of 480x272 pixels.
 
 ![screenshot](images/blank_map.png)
-
-To generate a satellite image, you can use [this map generator](https://ethosmap.hobby4life.nl/).  Alternatively, you can take a screenshot from [Google Maps](https://www.google.com/maps) and manually crop and resize it using a free image editing program like [Gimp](https://www.gimp.org/).
-
-## Other Transmitters
-
-While GPS Viewer has been fully tested only on the Radiomaster TX16S, it will likely work on other [color screen transmitters](https://manual.edgetx.org/color-radios) running EdgeTX.  Users just need to size their satellite images to match their screen resolution as described above.
