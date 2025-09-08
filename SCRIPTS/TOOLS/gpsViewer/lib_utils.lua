@@ -152,7 +152,7 @@ end
 function M.larger(file,size_KB)
     -- determine if file is larger than size_KB
     io.seek(file, size_KB * 1024)
-    s = io.read(file, 1)
+    local s = io.read(file, 1)
     return string.len(s) > 0
 end
 
