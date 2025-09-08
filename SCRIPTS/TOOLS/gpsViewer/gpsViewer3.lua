@@ -88,8 +88,8 @@ local filename
 local filename_idx = 1
 local file_selected
 local proceed_with_blank_map
-local select_another_map
-local map_warning_text
+local next_button_pressed
+local previous_button_pressed
 
 local columns_by_header = {}
 local columns_with_data = {}
@@ -1153,6 +1153,14 @@ local function compute_map_boundary()
         long_max = maps[selected_map]["long_max"]
         lat_min = maps[selected_map]["lat_min"]
         lat_max = maps[selected_map]["lat_max"]
+        if maps[selected_map]["width"] ~= LCD_W then
+            local long_diff = long_max - long_min
+            long_max = long_min + long_diff * LCD_W / maps[selected_map]["width"]
+        end
+        if maps[selected_map]["height"] ~= LCD_H then
+            local lat_diff = lat_max - lat_min
+            lat_min = lat_max - lat_diff * LCD_H / maps[selected_map]["height"]
+        end
     end
 end
 
@@ -1483,7 +1491,9 @@ end
 
 local function state_LOAD_MAP_init(event, touchState) 
     proceed_with_blank_map = false
-    select_another_map = false
+    next_button_pressed = false
+    previous_button_pressed = false
+    
     
     if maps[selected_map]["path"] == nil or dimensions_match() then
         -- proceed to read file data if dimensions match
@@ -1494,10 +1504,10 @@ local function state_LOAD_MAP_init(event, touchState)
         local button_height = 45
         ctx4.button(LCD_W - button_width - 10,  LCD_H - button_height - 10,
             button_width, button_height, "Next",
-            function() proceed_with_blank_map = true end)
+            function() next_button_pressed = true end)
         ctx4.button(10,  LCD_H - button_height - 10,
             button_width, button_height, "Previous",
-            function() select_another_map = true end)
+            function() previous_button_pressed = true end)
         
         if maps[selected_map]["width"] < 1 or maps[selected_map]["height"] < 1 then
             map_warning_text = {
@@ -1506,12 +1516,14 @@ local function state_LOAD_MAP_init(event, touchState)
                 "Press Page> to proceed with a blank map " ..
                 "or press Page< to select another map."
             }
+            proceed_with_blank_map = true
         else
             map_warning_text = {
                 string.format("Map (%s) dimensions %d x %d ",
                     maps[selected_map]["name"], maps[selected_map]["width"], maps[selected_map]["height"]) ..
                 string.format("do not match screen dimensions %d x %d. ", LCD_W, LCD_H) ..
-                "Press Page> to proceed with a blank map " ..
+                --"Press Page> to proceed with a blank map " ..
+                "Press Page> to proceed anyway " ..
                 "or press Page< to select another map."
             }
         end
@@ -1521,13 +1533,14 @@ local function state_LOAD_MAP_init(event, touchState)
 end
 
 local function state_LOAD_MAP_refresh(event, touchState)
-    if event == EVT_VIRTUAL_NEXT_PAGE or proceed_with_blank_map then
-        -- switch to the blank map and proceed
-        selected_map = #maps -- the last map is the blank map
+    if event == EVT_VIRTUAL_NEXT_PAGE or next_button_pressed then
+        if proceed_with_blank_map then
+            selected_map = #maps -- the last map is the blank map
+        end
         state = STATE.READ_FILE_DATA
     end
     
-    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE or select_another_map then
+    if event == EVT_VIRTUAL_EXIT or event == EVT_VIRTUAL_PREV_PAGE or previous_button_pressed then
         -- go back and select another map
         state = STATE.SELECT_SENSORS_INIT
     end
