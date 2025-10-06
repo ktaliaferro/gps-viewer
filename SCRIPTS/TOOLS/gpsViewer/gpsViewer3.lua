@@ -47,21 +47,11 @@ table.insert(maps,{name="Blank"})
 local min_log_length_sec = m_config.min_log_length_sec
 local max_log_size_MB = m_config.max_log_size_MB
 
---function cache
-local math_floor = math.floor
-local math_fmod = math.fmod
-local string_gmatch = string.gmatch
-local string_gsub = string.gsub
-local string_len = string.len
-local string_sub = string.sub
-local string_char = string.char
-local string_byte = string.byte
-
 local hFile
 local log_file_list_raw = {}
 local log_file_list_raw_idx = -1
-local log_size_KB = nil
-local logging_interval = nil
+local log_size_KB
+local logging_interval
 
 local files_indexed_successfully = 0
 local files_already_indexed = 0
@@ -77,9 +67,8 @@ local filter_date
 local filter_date_idx = 1
 local model_name_list
 local date_list
-local ddModel = nil
-local ddLogFile = nil -- log-file dropDown object
-local ddIndexType = nil
+local ddModel
+local ddLogFile -- log-file dropDown object
 
 local INDEX_TYPE = {ALL=1, TODAY=2, LAST=3}
 local index_type = INDEX_TYPE.ALL
@@ -93,7 +82,7 @@ local previous_button_pressed
 
 local columns_by_header = {}
 local columns_with_data = {}
-local current_session = nil
+local current_session
 local FIRST_VALID_COL = 2
 local gpsID
 
@@ -196,9 +185,9 @@ end
 --------------------------------------------------------------
 
 local function toDuration(totalSeconds)
-    local hours = math_floor(totalSeconds / 3600)
+    local hours = math.floor(totalSeconds / 3600)
     totalSeconds = totalSeconds - (hours * 3600)
-    local minutes = math_floor(totalSeconds / 60)
+    local minutes = math.floor(totalSeconds / 60)
     local seconds = totalSeconds - (minutes * 60)
 
     return string.format("%02.0f:%02.0f:%04.1f", hours, minutes, seconds)
@@ -207,7 +196,7 @@ end
 local function get_lat(s)
     if s == nil or s == "" then return nil end
     local coordinates = {}
-    for coordinate in string_gmatch(s,"[^%s]+")
+    for coordinate in string.gmatch(s,"[^%s]+")
     do
         table.insert(coordinates,coordinate)
     end
@@ -217,7 +206,7 @@ end
 local function get_long(s)
     if s == nil or s == "" then return nil end
     local coordinates = {}
-    for coordinate in string_gmatch(s,"[^%s]+")
+    for coordinate in string.gmatch(s,"[^%s]+")
     do
         table.insert(coordinates,coordinate)
     end
@@ -274,7 +263,7 @@ local function collectData()
     buffer = buffer .. read
     local i = 0
 
-    for line in string_gmatch(buffer, "([^\n]+)\n") do
+    for line in string.gmatch(buffer, "([^\n]+)\n") do
         if lines % skip_lines == 0 then
             local vals = m_utils.split(line)
 
@@ -625,7 +614,7 @@ local function state_SELECT_INDEX_TYPE_init(event, touchState)
     ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
 
     local width = math.min(320, LCD_W - 20)
-    local x = (LCD_W - width) // 2
+    local x = math.floor((LCD_W - width) / 2)
     ctx3.button(x,  60, width, 55, "Only last flight (fast)", onButtonIndexTypeLastFlight)
     ctx3.button(x, 130, width, 55, "Last flights day", onButtonIndexTypeToday)
     ctx3.button(x, 200, width, 55, "All flights (slow)", onButtonIndexTypeAll)
@@ -1522,7 +1511,6 @@ local function state_LOAD_MAP_init(event, touchState)
                 string.format("Map (%s) dimensions %d x %d ",
                     maps[selected_map]["name"], maps[selected_map]["width"], maps[selected_map]["height"]) ..
                 string.format("do not match screen dimensions %d x %d. ", LCD_W, LCD_H) ..
-                --"Press Page> to proceed with a blank map " ..
                 "Press Page> to proceed anyway " ..
                 "or press Page< to select another map."
             }
