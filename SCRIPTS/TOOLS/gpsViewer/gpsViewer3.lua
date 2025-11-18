@@ -306,8 +306,18 @@ local function compare_dates_inc(a, b)
     return a < b
 end
 
+local function compare_dates_dec(a, b)
+    return a > b
+end
+
 local function compare_names(a, b)
     return a < b
+end
+
+local function compare_file_names_raw_dec(a, b)
+    local a1 = string.sub(a, -21, -5)
+    local b1 = string.sub(b, -21, -5)
+    return a1 > b1
 end
 
 local function drawProgress(x, y, current, total)
@@ -363,12 +373,12 @@ local function get_log_files_list()
 
         if modelName ~= nil then
             if not already_indexed then
-                log_files_list_all[#log_files_list_all+1] = fn
+                m_tables.list_ordered_insert(log_files_list_all, fn, compare_file_names_raw_dec, 1)
             else already_indexed_all = already_indexed_all + 1 end
 
             if log_day==last_day then
                 if not already_indexed then
-                    log_files_list_today[#log_files_list_today+1] = fn
+                    m_tables.list_ordered_insert(log_files_list_today, fn, compare_file_names_raw_dec, 1)
                 else already_indexed_today = already_indexed_today + 1 end
             end
 
@@ -470,7 +480,7 @@ local function read_and_index_file_list()
                 log("read_and_index_file_list: total_seconds: %s", total_seconds)
                 m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
                 local model_day = string.format("%s-%s-%s", year, month, day)
-                m_tables.list_ordered_insert(date_list, model_day, compare_dates_inc, 2)
+                m_tables.list_ordered_insert(date_list, model_day, compare_dates_dec, 2)
                 local index_time_seconds = math.floor((getTime() - index_start_time) / 100)
                 table.insert(index_times, index_time_seconds)
                 table.insert(filenames,string.sub(filename,1,3))
