@@ -44,7 +44,7 @@ local show_map_draw_count = false -- show map draw count for testing purposes
 -- configuration imported from lib_config.lua
 local maps = m_config.maps
 table.insert(maps,{name="Blank"})
-local min_log_length_sec = m_config.min_log_length_sec
+local min_log_length_sec = math.max(m_config.min_log_length_sec, 1)
 local max_log_size_MB = m_config.max_log_size_MB
 
 local hFile
@@ -423,9 +423,12 @@ end
 
 local function display_indexing_status(text_color)
     local offset = 0
-    if min_log_length_sec > 0 then
+
+    if files_too_short > 0 then
         offset = 20
-        lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d seconds.", files_too_short, min_log_length_sec), text_color + SMLSIZE)
+        local suffix
+        if min_log_length_sec > 1 then suffix = "s" else suffix = "" end
+        lcd.drawText(10, LCD_H-20, string.format("%d log files filtered out due to duration under %d second%s.", files_too_short, min_log_length_sec, suffix), text_color + SMLSIZE)
     end
     if show_indexing_times then
         -- show indexing times for testing purposes
@@ -471,11 +474,12 @@ local function read_and_index_file_list()
                 if error_message == nil then
                     if is_new then files_indexed_successfully = files_indexed_successfully + 1 end
                     if not is_new then files_already_indexed = files_already_indexed + 1 end
+                    if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
                 else
                     if error_message == "too large" then files_too_large = files_too_large  + 1 end
                     if error_message == "no GPS column" then files_without_gps = files_without_gps + 1 end
+                    if error_message == "less than two lines of data" then files_too_short = files_too_short + 1 end
                 end
-                if total_seconds ~= nil and total_seconds < min_log_length_sec then files_too_short = files_too_short + 1 end
 
                 log("read_and_index_file_list: total_seconds: %s", total_seconds)
                 m_tables.list_ordered_insert(model_name_list, modelName, compare_names, 2)
