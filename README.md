@@ -1,6 +1,6 @@
 # GPS Viewer
 
-GPS Viewer is an app for [color screen RC transmitters](https://manual.edgetx.org/color-radios) running EdgeTX that lets users plot logged flight telemetry data with respect to location on a map.  This is especially useful for identifying areas with poor radio transmission signal quality.
+GPS Viewer is an app for [color screen RC transmitters](https://manual.edgetx.org/color-radios) running EdgeTX that lets users plot logged flight telemetry on a map of their airfield.  This is especially useful for identifying areas with poor radio transmission signal quality.
 
 ![screenshot](images/screenshot_points.png)
 
@@ -15,7 +15,7 @@ Special thanks to Lee from the Painless360 Youtube channel for covering some of 
 
 [![Painless360 Youtube Review Video](images/review_video_thumbnail.jpg)](https://www.youtube.com/watch?v=e8nbd5bs0Eg)
 
-GPS Viewer is based on [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry with respect to time.
+GPS Viewer is based on [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry on a timeline.
 
 ## Installation
 
@@ -55,6 +55,6 @@ To exit the app, press and hold the return button.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  The resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S, the image should have a resolution of 480x272 pixels.
+For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  For best results, the resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S Mark II, the image should have a resolution of 480x272 pixels.
 
 ![screenshot](images/blank_map.png)

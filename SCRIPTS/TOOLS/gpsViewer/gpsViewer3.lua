@@ -160,6 +160,7 @@ local show_boxes = true
 local show_crosshairs = true
 local map_drawn = false
 local map_draws = 0
+local map_scaling_factor
 local start_point = 0
 local end_point = 0
 local long_min, long_max, lat_min, lat_max
@@ -627,7 +628,7 @@ local function state_SELECT_INDEX_TYPE_init(event, touchState)
 
     ctx3.label(10, 30, 70, 24, "Select log files to index.", m_libgui.FONT_SIZES.FONT_8)
 
-    local width = math.min(320, LCD_W - 20)
+    local width = LCD_W - 20
     local x = math.floor((LCD_W - width) / 2)
     ctx3.button(x,  60, width, 55, "Only last flight (fast)", onButtonIndexTypeLastFlight)
     ctx3.button(x, 130, width, 55, "Last flights day", onButtonIndexTypeToday)
@@ -972,8 +973,11 @@ end
 local function display_read_data_progress(conversionSensorId, conversionSensorProgress)
     lcd.drawText(5, 25, "Reading data from file...", COLOR_THEME_PRIMARY1)
 
+    local progress_bar_offset, _ = lcd.sizeText("Reading line: 10000")
+    progress_bar_offset = progress_bar_offset + 10
+
     lcd.drawText(5, 60, "Reading line: " .. lines, COLOR_THEME_PRIMARY1)
-    drawProgress(140, 60, lines, current_session.total_lines)
+    drawProgress(progress_bar_offset, 60, lines, current_session.total_lines)
 
     local done_var_1 = 0
     local done_var_2 = 0
@@ -1000,16 +1004,16 @@ local function display_read_data_progress(conversionSensorId, conversionSensorPr
     local y = 85
     local dy = 25
     lcd.drawText(5, y, "Parsing Field 1: ", COLOR_THEME_PRIMARY1)
-    drawProgress(140, y, done_var_1, valPos)
+    drawProgress(progress_bar_offset, y, done_var_1, valPos)
     y = y + dy
     lcd.drawText(5, y, "Parsing Field 2: ", COLOR_THEME_PRIMARY1)
-    drawProgress(140, y, done_var_2, valPos)
+    drawProgress(progress_bar_offset, y, done_var_2, valPos)
     y = y + dy
     lcd.drawText(5, y, "Parsing Latitude: ", COLOR_THEME_PRIMARY1)
-    drawProgress(140, y, done_var_3, valPos)
+    drawProgress(progress_bar_offset, y, done_var_3, valPos)
     y = y + dy
     lcd.drawText(5, y, "Parsing Longitude: ", COLOR_THEME_PRIMARY1)
-    drawProgress(140, y, done_var_4, valPos)
+    drawProgress(progress_bar_offset, y, done_var_4, valPos)
 
 end
 
@@ -1156,13 +1160,20 @@ local function compute_map_boundary()
         long_max = maps[selected_map]["long_max"]
         lat_min = maps[selected_map]["lat_min"]
         lat_max = maps[selected_map]["lat_max"]
+        if maps[selected_map]["width"] ~= LCD_W and maps[selected_map]["height"] ~= LCD_H then
+            local width_factor = LCD_W / maps[selected_map]["width"]
+            local height_factor = LCD_H / maps[selected_map]["height"]
+            map_scaling_factor = math.floor(math.min(width_factor, height_factor) * 100)
+        else
+            map_scaling_factor = 100
+        end
         if maps[selected_map]["width"] ~= LCD_W then
             local long_diff = long_max - long_min
-            long_max = long_min + long_diff * LCD_W / maps[selected_map]["width"]
+            long_max = long_min + long_diff * LCD_W / (maps[selected_map]["width"] * map_scaling_factor * .01)
         end
         if maps[selected_map]["height"] ~= LCD_H then
             local lat_diff = lat_max - lat_min
-            lat_min = lat_max - lat_diff * LCD_H / maps[selected_map]["height"]
+            lat_min = lat_max - lat_diff * LCD_H / (maps[selected_map]["height"] * map_scaling_factor * .01)
         end
     end
 end
@@ -1170,7 +1181,8 @@ end
 local function draw_map_background()
     lcd.clear(MAP_BACKGROUND_COLOR)
     if maps[selected_map]["image"] ~= nil then
-        lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
+        lcd.clear(BLACK)
+        lcd.drawBitmap(maps[selected_map]["image"], 0, 0, map_scaling_factor)
     end
 end
 
@@ -1269,7 +1281,9 @@ local function draw_map()
     
     if show_boxes then
         -- draw telemetry of selected point
-        lcd.drawFilledRectangle(0,LCD_H-80-20,105,80+20,MAP_UI_BACKGROUND_COLOR)
+        local box_width, _ = lcd.sizeText("long: -97.603500", SMLSIZE)
+        box_width = box_width + 5
+        lcd.drawFilledRectangle(0,LCD_H-80-20,box_width,80+20,MAP_UI_BACKGROUND_COLOR)
         lcd.drawText(0,LCD_H-100,"Time: " .. toDuration(current_session.total_seconds * (selected_point) / (n_points-1)), MAP_UI_TEXT_COLOR + SMLSIZE)
         for i = 1,2,1 do
             if sensorSelection[i].idx ~= 1 then
@@ -1329,12 +1343,14 @@ end
 
 local function draw_help()
     if show_boxes and not show_help then
-        local box_width = 160
+        local box_width, _ = lcd.sizeText("press next page: show help", SMLSIZE)
+        box_width = box_width + 10
         local box_height = 20
         lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,MAP_UI_BACKGROUND_COLOR)
         lcd.drawText(LCD_W-box_width+5,0,"press next page: show help", MAP_UI_TEXT_COLOR + SMLSIZE)
     elseif show_help then
-        local box_width = 220
+        local box_width, _ = lcd.sizeText("press next page: toggle user interface", SMLSIZE)
+        box_width = box_width + 10
         local box_height = 160
         lcd.drawFilledRectangle(LCD_W-box_width,0,box_width,box_height,MAP_UI_BACKGROUND_COLOR)
         lcd.drawText(LCD_W-box_width+5,0,"press next page: toggle user interface", MAP_UI_TEXT_COLOR + SMLSIZE)
@@ -1497,8 +1513,9 @@ local function state_LOAD_MAP_init(event, touchState)
     next_button_pressed = false
     previous_button_pressed = false
     
+    local skip_map_dimensions_warning = true
     
-    if maps[selected_map]["path"] == nil or dimensions_match() then
+    if maps[selected_map]["path"] == nil or dimensions_match() or skip_map_dimensions_warning then
         -- proceed to read file data if dimensions match
         state = STATE.READ_FILE_DATA
     else
