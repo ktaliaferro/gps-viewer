@@ -160,6 +160,7 @@ local show_boxes = true
 local show_crosshairs = true
 local map_drawn = false
 local map_draws = 0
+local last_draw_time = 0
 local map_scaling_factor
 local start_point = 0
 local end_point = 0
@@ -1104,6 +1105,7 @@ local function state_PARSE_DATA_refresh(event, touchState)
 
     if conversionSensorId == 4 then
         map_drawn = false
+        last_draw_time = 0
         state = STATE.SHOW_GRAPH
     else
         conversionSensorProgress = 0
@@ -1182,7 +1184,11 @@ local function draw_map_background()
     lcd.clear(MAP_BACKGROUND_COLOR)
     if maps[selected_map]["image"] ~= nil then
         lcd.clear(BLACK)
-        lcd.drawBitmap(maps[selected_map]["image"], 0, 0, map_scaling_factor)
+        if map_scaling_factor ~= 100 then
+            lcd.drawBitmap(maps[selected_map]["image"], 0, 0, map_scaling_factor)
+        else
+            lcd.drawBitmap(maps[selected_map]["image"], 0, 0)
+        end
     end
 end
 
@@ -1364,10 +1370,20 @@ local function draw_help()
     end
 end
 
+local function apply_deadzone(x)
+    local deadzone = 0.05
+    if x > deadzone then
+        return (x - deadzone) / (1 - deadzone)
+    elseif x < -1 * deadzone then
+        return (x + deadzone) / (1 - deadzone)
+    else
+        return 0
+    end
+end
+
 local function parse_user_input_for_map(event, touchState)
     local adjust_raw
     local adjust
-    local deadzone = 0.05
     
     -- Store previous map parameters so that we can check for updates.
     local selected_point_old = selected_point
@@ -1378,8 +1394,8 @@ local function parse_user_input_for_map(event, touchState)
     local selected_style_old = selected_style
 
     -- use elevator stick to zoom
-    adjust_raw = getValue('ele') / 1024
-    if math.abs(adjust_raw) > deadzone then
+    adjust_raw = apply_deadzone(getValue('ele') / 1024)
+    if math.abs(adjust_raw) > 0 then
         adjust = adjust_raw * .1 * -1
         if adjust < -1 * (end_proportion - start_proportion) / 2 then adjust = 0 end
         end_proportion = end_proportion + adjust 
@@ -1389,8 +1405,8 @@ local function parse_user_input_for_map(event, touchState)
     end
 
     -- use aileron stick pan
-    adjust_raw = getValue('ail') / 1024
-    if math.abs(adjust_raw) > deadzone then
+    adjust_raw = apply_deadzone(getValue('ail') / 1024)
+    if math.abs(adjust_raw) > 0 then
         adjust = adjust_raw * .1
         if adjust > (1 - end_proportion) then adjust = 1 - end_proportion end
         if adjust < -1 * start_proportion then adjust = -1 * start_proportion end
@@ -1413,8 +1429,8 @@ local function parse_user_input_for_map(event, touchState)
     end
 
     -- use rudder stick to increment time quickly
-    adjust_raw = getValue('rud') / 1024
-    if math.abs(adjust_raw) > deadzone then
+    adjust_raw = apply_deadzone(getValue('rud') / 1024)
+    if math.abs(adjust_raw) > 0 then
         adjust = adjust_raw * 60
         selected_point = math.floor(selected_point + adjust)
     end
@@ -1580,8 +1596,13 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
         initialize_map_parameters()
         compute_map_boundary()
     end
-
-    local map_needs_update = parse_user_input_for_map(event, touchState)
+    
+    local min_draw_interval = 10
+    local elapsed = getTime() - last_draw_time
+    local map_needs_update = false
+    if elapsed > min_draw_interval then
+        map_needs_update = parse_user_input_for_map(event, touchState)
+    end
     
     -- Redraw the map if there are any updates.
     -- Limiting redraws makes the app more responsive to stick inputs.
@@ -1599,6 +1620,7 @@ local function state_SHOW_GRAPH_refresh(event, touchState)
 
         map_drawn = true
         map_draws = map_draws + 1
+        last_draw_time = getTime()
     end
 
     return 0
