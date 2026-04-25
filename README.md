@@ -58,3 +58,7 @@ To exit the app, press and hold the return button.
 For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  For best results, the resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S Mark II, the image should have a resolution of 480x272 pixels.
 
 ![screenshot](images/blank_map.png)
+
+To generate a satellite image, go to [Google Maps](https://www.google.com/maps) in your web browser, navigate to your airfield, and take a screenshot.  Then use a free image editing program like [GIMP](https://www.gimp.org/) to crop and resize the screenshot to match the screen resolution of your transmitter.
+
+To get the maximum longitude and latitude values for your image, return to Google Maps and right click on the spot corresponding to the top right corner of your image.  Similarly, to get the minimum longitude and latitude values, click on the spot corresponding to the bottom left corner of your image.
