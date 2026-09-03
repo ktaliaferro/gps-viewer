@@ -1,8 +1,8 @@
 # GPS Viewer
 
-GPS Viewer is an app for [color screen RC transmitters](https://manual.edgetx.org/color-radios) running EdgeTX that lets users plot logged flight telemetry on a map of their airfield.  This is especially useful for identifying areas with poor radio transmission signal quality.
+GPS Viewer is an app for [color screen RC transmitters](https://manual.edgetx.org/color-radios) running EdgeTX that lets users plot logged flight telemetry on a map of their airfield. This is especially useful for identifying areas with poor radio transmission signal quality.
 
-![screenshot](images/screenshot_points.png)
+![GPS Viewer plotting flight telemetry points on an airfield map](images/screenshot_points.png)
 
 It can also be used to
 - tune radio antenna alignment,
@@ -11,9 +11,9 @@ It can also be used to
 - verify that the aircraft remains within the desired airspace,
 - and locate crashed aircraft.
 
-Special thanks to Lee from the Painless360 Youtube channel for covering some of these use cases in more detail in the video below.
+Special thanks to Lee from the Painless360 YouTube channel for covering some of these use cases in more detail in the video below.
 
-[![Painless360 Youtube Review Video](images/review_video_thumbnail.jpg)](https://www.youtube.com/watch?v=e8nbd5bs0Eg)
+[![Painless360 YouTube review video](images/review_video_thumbnail.jpg)](https://www.youtube.com/watch?v=e8nbd5bs0Eg)
 
 GPS Viewer is based on [Log Viewer](https://github.com/offer-shmuely/edgetx-x10-scripts/wiki/LogViewer) by Offer Shmuely, which is for plotting telemetry on a timeline.
 
@@ -23,42 +23,49 @@ Copy the `SCRIPTS` directory to your transmitter.
 
 Optionally also copy the `LOGS` directory to your transmitter if you'd like to have a sample log file with which to try out the app.
 
-## Use
+## Usage
 
 To open the app, press the system button on your transmitter and select GPS Viewer.
 
-1. Select log files to index.  This step determines which fields have data that changes over time and takes about 30 seconds per MB.  To keep log files small and indexing fast, it is recommended to use a logging interval of at least 1 second in EdgeTX.
+1. Select log files to index. This step determines which fields have data that changes over time and takes about 30 seconds per MB. To keep log files small and indexing fast, it is recommended to use a logging interval of at least 1 second in EdgeTX.
 
-    ![screenshot](images/step_01.png)
+    ![Selecting log files to index](images/step_01.png)
 
 2. Select a log file from the index.
 
-    ![screenshot](images/step_02.png)
+    ![Selecting a log file from the index](images/step_02.png)
 
-3. Select fields to plot and a map to plot on.  Fields with data that doesn't change over time are excluded.
+3. Select fields to plot and a map to plot on. Fields with data that doesn't change over time are excluded.
 
-    ![screenshot](images/step_03.png)
+    ![Selecting fields and a map to plot on](images/step_03.png)
 
-4. View the plot.  You can use the control sticks to select a subinterval of the timeline to plot and inspect individual data points.
+4. View the plot. You can use the control sticks to select a subinterval of the timeline to plot and inspect individual data points.
 
-    - elevator stick: zoom timeline
-    - aileron stick: pan timeline
-    - rudder stick: move crosshair
-    - scroll wheel: fine tune crosshair
-    - scroll button: toggle plot style
-    - telemetry button: toggle telemetry field
-    - next page button: toggle user interface
+    | Control | Action |
+    | --- | --- |
+    | Elevator stick | Zoom timeline |
+    | Aileron stick | Pan timeline |
+    | Rudder stick | Move crosshair |
+    | Scroll wheel | Fine tune crosshair |
+    | Scroll button | Toggle plot style |
+    | Telemetry button | Toggle telemetry field |
+    | Next page button | Toggle user interface |
 
-    ![screenshot](images/step_04.png)
+    ![Viewing the plotted telemetry](images/step_04.png)
 
 To exit the app, press and hold the return button.
 
 ## Satellite Image
 
-For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory and update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.  For best results, the resolution of the image should match the screen resolution of your transmitter.  For example, on the the Radiomaster TX16S Mark II, the image should have a resolution of 480x272 pixels.
+For flights at your local airfield, you can either use the included blank background (shown below) or add a satellite image of your airfield to the `SCRIPTS/TOOLS/gpsViewer` directory.
 
-![screenshot](images/blank_map.png)
+If you add your own image:
 
-To generate a satellite image, go to [Google Maps](https://www.google.com/maps) in your web browser, navigate to your airfield, and take a screenshot.  Then use a free image editing program like [GIMP](https://www.gimp.org/) to crop and resize the screenshot to match the screen resolution of your transmitter.
+- Update [lib_config.lua](SCRIPTS/TOOLS/gpsViewer/lib_config.lua) with the minimum and maximum longitude and latitude coordinates of your image.
+- For best results, match the image resolution to the screen resolution of your transmitter. For example, on the RadioMaster TX16S Mark II, the image should be 480x272 pixels.
 
-To get the maximum longitude and latitude values for your image, return to Google Maps and right click on the spot corresponding to the top right corner of your image.  Similarly, to get the minimum longitude and latitude values, click on the spot corresponding to the bottom left corner of your image.
+![Blank airfield background map](images/blank_map.png)
+
+To generate a satellite image, go to [Google Maps](https://www.google.com/maps) in your web browser, navigate to your airfield, and take a screenshot. Then use a free image editing program like [GIMP](https://www.gimp.org/) to crop and resize the screenshot to match the screen resolution of your transmitter.
+
+To get the maximum longitude and latitude values for your image, return to Google Maps and right-click on the spot corresponding to the top right corner of your image. Similarly, to get the minimum longitude and latitude values, right-click on the spot corresponding to the bottom left corner of your image.
