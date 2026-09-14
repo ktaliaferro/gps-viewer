@@ -73,6 +73,9 @@ local ddLogFile -- log-file dropDown object
 local INDEX_TYPE = {ALL=1, TODAY=2, LAST=3}
 local index_type = INDEX_TYPE.ALL
 
+-- this sample log is always indexed, no matter which index type is selected, if it exists on disk
+local SAMPLE_LOG_FILENAME = "SampleLog-2024-10-10-113001.csv"
+
 local filename
 local filename_idx = 1
 local file_selected
@@ -365,8 +368,14 @@ local function get_log_files_list()
     local already_indexed_all = 0
     local already_indexed_today = 0
     local already_indexed_latest = 0
-    
+
+    local sample_log_exists = false
+
     for fn in dir("/LOGS") do
+
+        if fn == SAMPLE_LOG_FILENAME then
+            sample_log_exists = true
+        end
 
         local modelName, year, month, day, hour, min, sec, m, d, y = string.match(fn, "^(.*)-(%d+)-(%d+)-(%d+)-(%d%d)(%d%d)(%d%d).csv$")
         local log_day = string.format("%s-%s-%s", year, month, day)
@@ -394,6 +403,13 @@ local function get_log_files_list()
     --m_tables.table_print("log_files_list_all", log_files_list_all)
     --m_tables.table_print("log_files_list_today", log_files_list_today)
     --m_tables.table_print("log_files_list_latest", log_files_list_latest)
+
+    -- make sure the sample log is indexed no matter which index type is selected
+    if sample_log_exists and not m_index_file.indexed_filenames[SAMPLE_LOG_FILENAME] then
+        m_tables.list_ordered_insert(log_files_list_all, SAMPLE_LOG_FILENAME, compare_file_names_raw_dec, 1)
+        m_tables.list_ordered_insert(log_files_list_today, SAMPLE_LOG_FILENAME, compare_file_names_raw_dec, 1)
+        m_tables.list_ordered_insert(log_files_list_latest, SAMPLE_LOG_FILENAME, compare_file_names_raw_dec, 1)
+    end
 
     -- return list of log files to index
     if index_type == INDEX_TYPE.ALL then
